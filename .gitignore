@@ -1,0 +1,9 @@
+# Virtual environment
+.venv
+
+# PyCharm configurations
+.idea
+
+# Weights & Biases logs
+.wandb/
+wandb/
