@@ -5,3 +5,5 @@ torchaudio==2.7.1+cu128
 torchvision==0.22.1+cu128
 wandb[media]==0.21.0
 imageio==2.37.0
+pyyaml==6.0.2
+omegaconf==2.3.0

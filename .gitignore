@@ -7,3 +7,4 @@
 # Weights & Biases logs
 .wandb/
 wandb/
+logs/
