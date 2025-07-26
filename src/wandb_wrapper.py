@@ -11,7 +11,7 @@ class WandbWrapper:
         run (wandb.Run): object that handles computations and logging
     """
 
-    def __init__(self, yaml_path: str) -> None:
+    def __init__(self, yaml_path: str):
         """Initializes the instance with given configuration
 
         Args:

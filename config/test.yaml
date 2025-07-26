@@ -6,12 +6,11 @@
 # The second part (config) is used to change hyperparameter settings of agents.
 # Changing it adjusts the way agents behave and learn.
 project: "My nice project name"
-name: "Not an error ;)"
+name: "HalfCheetah-v5 run"
 dir: "../logs"
 notes: "RUN?"
 mode: "online"
 monitor_gym: "False"
 config:
-  parameter1: 420
-  parameter2: 69
-  parameter3: 42
+  episodes: 5
+  action_selection: "Random"
