@@ -1,10 +1,10 @@
-# This file is used to configure logging and agents behaviour
+# This file is used to configure logging and agents behaviour.
 #
-# The first part consists of Wandb info that is used to log experiments
-# Changing it adjusts the way logging is stored and displayed
+# The first part consists of Wandb info used to log experiments.
+# Changing it adjusts the way logging is stored and displayed.
 #
-# The second part (config) is used to change hyperparameter settings of agents
-# Changing it adjusts the way agents behave and learn
+# The second part (config) is used to change hyperparameter settings of agents.
+# Changing it adjusts the way agents behave and learn.
 project: "My nice project name"
 name: "Testing before Git"
 dir: "../logs"

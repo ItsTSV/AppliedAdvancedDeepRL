@@ -29,15 +29,9 @@ class WandbWrapper:
         )
 
     def log(self, data: dict) -> None:
-        """Logs data into current run
-
-        Args:
-            data (dict): key-value pairs with episode info
-        """
         self.run.log(data)
 
     def finish(self) -> None:
-        """Finished current run, syncs data"""
         self.run.finish()
 
     def __validate_parameters(self) -> None:
