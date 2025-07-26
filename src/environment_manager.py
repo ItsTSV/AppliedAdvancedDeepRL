@@ -7,7 +7,12 @@ class EnvironmentManager:
     """
 
     def __init__(self, name: str, render_mode: str):
-        """Initializes Gymnasium environment and info about it"""
+        """Initializes Gymnasium environment and info about it
+
+        Attributes:
+            name (str): Selected environment, see https://gymnasium.farama.org/
+            render_mode (str): "rgb_array" for computations, "human" for showcases
+        """
         self.env = gym.make(name, render_mode=render_mode)
         self.state_space_dimension = (
             len(self.env.action_space.sample())
