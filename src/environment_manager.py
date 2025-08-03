@@ -14,18 +14,19 @@ class EnvironmentManager:
             render_mode (str): "rgb_array" for computations, "human" for showcases
         """
         self.env = gym.make(name, render_mode=render_mode)
-        self.state_space_dimension = (
-            len(self.env.action_space.sample())
-            if isinstance(self.env.action_space, gym.spaces.Box)
-            else self.env.action_space.n
-        )
-        self.observation_space_dimension = len(self.env.observation_space.sample())
         self.episode_steps = 0
         self.episode_reward = 0
 
     def get_dimensions(self) -> tuple:
         """Returns state and observation space dimension"""
-        return self.state_space_dimension, self.observation_space_dimension
+        return (
+            (
+                len(self.env.action_space.sample())
+                if isinstance(self.env.action_space, gym.spaces.Box)
+                else self.env.action_space.n
+            ),
+            len(self.env.observation_space.sample()),
+        )
 
     def step(self, action) -> tuple:
         """Advances the environment, processes the output
