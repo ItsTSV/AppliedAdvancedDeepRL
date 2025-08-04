@@ -4,6 +4,7 @@ import torch.nn as nn
 
 class ActorCriticNet(nn.Module):
     """Discrete Actor-Critic Network for PPO."""
+
     def __init__(self, action_space_size: int, state_space_size: int):
         super().__init__()
         self.network = nn.Sequential(
@@ -17,7 +18,7 @@ class ActorCriticNet(nn.Module):
         self.actor_head = nn.Linear(32, action_space_size)
         self.critic_head = nn.Linear(32, 1)
 
-    def forward(self, x: torch.tensor):
+    def forward(self, x: torch.tensor) -> tuple:
         """Forward pass through the network.
 
         Args:

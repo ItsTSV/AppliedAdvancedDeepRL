@@ -33,7 +33,7 @@ class WandbWrapper:
         """Gets hyperparameter from given configuration"""
         if name in self.hyperparameters:
             return self.hyperparameters[name]
-        raise Exception("Hyperparameter not set!")
+        raise KeyError("Hyperparameter not set!")
 
     def log(self, data: dict) -> None:
         self.run.log(data)

@@ -12,7 +12,13 @@ notes: "Testing how modular, correct and configurable my PPO implementation is"
 mode: "online"
 monitor_gym: "False"
 config:
-  episodes: 50
-  max_steps: 1000
+  episodes: 500
+  max_steps: 500
   gamma: 0.99
-  learning_rate: 0.0003
+  lambda: 0.95
+  ppo_epochs: 8
+  batch_size: 2048
+  clip_epsilon: 0.2
+  learning_rate_shared: 0.0005
+  learning_rate_actor: 0.0005
+  learning_rate_critic: 0.001
