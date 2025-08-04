@@ -1,0 +1,18 @@
+# This file is used to configure logging and agents behaviour.
+#
+# The first part consists of Wandb info used to log experiments.
+# Changing it adjusts the way logging is stored and displayed.
+#
+# The second part (config) is used to change hyperparameter settings of agents.
+# Changing it adjusts the way agents behave and learn.
+project: "ReinforcementLearning"
+name: "PPO PoleBalancing-v1"
+dir: "../logs"
+notes: "Testing how modular, correct and configurable my PPO implementation is"
+mode: "online"
+monitor_gym: "False"
+config:
+  episodes: 50
+  max_steps: 1000
+  gamma: 0.99
+  learning_rate: 0.0003

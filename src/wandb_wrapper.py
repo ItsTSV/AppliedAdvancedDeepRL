@@ -27,6 +27,13 @@ class WandbWrapper:
             config=self.hyperparameters,
             settings=wandb.Settings(quiet=True)
         )
+        self.run.define_metric("*", step_metric="episode")
+
+    def get_hyperparameter(self, name: str):
+        """Gets hyperparameter from given configuration"""
+        if name in self.hyperparameters:
+            return self.hyperparameters[name]
+        raise Exception("Hyperparameter not set!")
 
     def log(self, data: dict) -> None:
         self.run.log(data)

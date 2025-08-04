@@ -43,12 +43,15 @@ class EnvironmentManager:
         return state, episode_reward, finished, info
 
     def reset(self) -> tuple:
-        """Resets the environment, returns info about the episode and new state"""
+        """Resets the environment, returns a new state"""
         new_state = self.env.reset()[0]
-        total_steps, total_reward = self.episode_steps, self.episode_reward
         self.episode_steps = 0
         self.episode_reward = 0
-        return total_steps, total_reward, new_state
+        return new_state
+
+    def get_episode_info(self) -> tuple:
+        """Returns the number of steps and total reward in the current episode"""
+        return self.episode_steps, self.episode_reward
 
     def close(self) -> None:
         self.env.close()
