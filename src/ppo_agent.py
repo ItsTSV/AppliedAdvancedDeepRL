@@ -41,7 +41,8 @@ class PPOAgent:
                     "params": self.model.critic_head.parameters(),
                     "lr": self.wdb.get_hyperparameter("learning_rate_critic"),
                 },
-            ]
+            ],
+            eps=1e-5,  # https://iclr-blog-track.github.io/2022/03/25/ppo-implementation-details/
         )
 
     def get_action(self, state: numpy.ndarray) -> tuple:
@@ -75,7 +76,6 @@ class PPOAgent:
         gae = 0.0
         gamma = self.wdb.get_hyperparameter("gamma")
         lmbda = self.wdb.get_hyperparameter("lambda")
-        last_value = last_value.unsqueeze(0)
         values = torch.cat([values, last_value], dim=0)
 
         for step in reversed(range(len(rewards))):
@@ -102,12 +102,16 @@ class PPOAgent:
         states, actions, log_probs, rewards, values, dones = self.memory.get_tensors()
 
         # Compute next value from final state
+        # Make sure to estimate 0 if the episode is terminated
         with torch.no_grad():
-            _, next_value = self.model(
-                torch.tensor(final_state, dtype=torch.float32).to(self.device)
-            )
+            if dones[-1]:
+                next_value = torch.tensor([0.0], dtype=torch.float32).to(self.device)
+            else:
+                _, next_value = self.model(
+                    torch.tensor(final_state, dtype=torch.float32).to(self.device)
+                )
 
-        # Compute advantages and returns
+        # Compute advantages and returns using GAE and value estimates
         advantages = self.compute_advantages(rewards, values, next_value, dones)
         returns = values + advantages
 

@@ -6,12 +6,13 @@
 # The second part (config) is used to change hyperparameter settings of agents.
 # Changing it adjusts the way agents behave and learn.
 project: "ReinforcementLearning"
-name: "PPO PoleBalancing-v1 NA V"
+name: "PPO PoleBalancing-v1 TV EPS"
 dir: "../logs"
-notes: "Testing PPO with normalized advantage calculation with values"
+notes: "Testing PPO with zero terminal value if episode is terminated and 1e-5 eps for optimizer."
 mode: "online"
 monitor_gym: "False"
 config:
+  environment: "PoleBalancing-v1"
   episodes: 500
   max_steps: 500
   gamma: 0.99

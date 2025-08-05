@@ -4,9 +4,12 @@ from environment_manager import EnvironmentManager
 from ppo_agent import PPOAgent
 from ppo_models import ActorCriticNet
 
-# Initialize WandbWrapper and EnvironmentManager
+# Initialize WandbWrapper
 wdb = WandbWrapper("../config/ppo.yaml")
-env = EnvironmentManager("CartPole-v1", "rgb_array")
+
+# Initialize environment
+name = wdb.get_hyperparameter("environment")
+env = EnvironmentManager(name, "rgb_array")
 
 # Initialize network
 action_space, observation_space = env.get_dimensions()
