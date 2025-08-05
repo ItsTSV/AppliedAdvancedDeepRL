@@ -75,6 +75,7 @@ class PPOAgent:
         gae = 0.0
         gamma = self.wdb.get_hyperparameter("gamma")
         lmbda = self.wdb.get_hyperparameter("lambda")
+        last_value = last_value.unsqueeze(0)
         values = torch.cat([values, last_value], dim=0)
 
         for step in reversed(range(len(rewards))):
@@ -85,6 +86,9 @@ class PPOAgent:
             )
             gae = delta + gamma * lmbda * (1 - dones[step]) * gae
             advantages[step] = gae
+
+        # Normalize advantages to stabilize training
+        advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
 
         return advantages
 
@@ -105,7 +109,7 @@ class PPOAgent:
 
         # Compute advantages and returns
         advantages = self.compute_advantages(rewards, values, next_value, dones)
-        returns = rewards + advantages
+        returns = values + advantages
 
         # Optimize policy for K epochs
         epoch_count = self.wdb.get_hyperparameter("ppo_epochs")
