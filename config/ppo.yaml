@@ -6,22 +6,22 @@
 # The second part (config) is used to change hyperparameter settings of agents.
 # Changing it adjusts the way agents behave and learn.
 project: "ReinforcementLearning"
-name: "PPO PoleBalancing-v1 TV EPS"
+name: "PPO PoleBalancing-v1"
 dir: "../logs"
-notes: "Testing PPO with zero terminal value if episode is terminated and 1e-5 eps for optimizer."
+notes: "Testing PPO -- before commit, no clipping"
 mode: "online"
 monitor_gym: "False"
 config:
-  environment: "PoleBalancing-v1"
-  episodes: 500
-  max_steps: 500
-  gamma: 0.99
-  lambda: 0.95
-  ppo_epochs: 8
-  batch_size: 2048
-  clip_epsilon: 0.2
-  learning_rate_shared: 0.0005
-  learning_rate_actor: 0.0005
-  learning_rate_critic: 0.001
-  value_loss_coef: 0.5
-  entropy_coef: 0.01
+  environment: "CartPole-v1"                # Environment to use
+  episodes: 500                             # For how many episodes will agent train?
+  max_steps: 500                            # How many steps before the episode is terminated?
+  gamma: 0.99                               # Discount factor for future rewards
+  lambda: 0.95                              # GAE tradeoff parameter
+  ppo_epochs: 8                             # How many epochs to train on each episode?
+  batch_size: 2048                          # How many steps are in each batch?
+  clip_epsilon: 0.2                         # How much is the policy clipped?
+  learning_rate_shared: 0.0005              # Learning rate for neural network
+  learning_rate_actor: 0.0005               # Learning rate for actor head
+  learning_rate_critic: 0.001               # Learning rate for critic head
+  value_loss_coef: 0.5                      # How much is the value loss weighted?
+  entropy_coef: 0.01                        # How much is the entropy loss weighted?

@@ -123,16 +123,21 @@ class PPOAgent:
         # Stats
         total_policy_loss = 0.0
         total_value_loss = 0.0
+        update_count = 0
 
         for _ in range(epoch_count):
-            for i in range(0, len(states), batch_size):
+            # Shuffle the data for each epoch to ensure better generalisation
+            # Needs to be done before batching so the data does not repeat
+            indices = torch.randperm(len(states))
+
+            for i in range(0, len(indices), batch_size):
                 # Create batches
-                end = i + batch_size
-                batch_states = states[i:end]
-                batch_actions = actions[i:end]
-                batch_log_probs = log_probs[i:end]
-                batch_returns = returns[i:end]
-                batch_advantages = advantages[i:end]
+                batch_indices = indices[i:i + batch_size]
+                batch_states = states[batch_indices]
+                batch_actions = actions[batch_indices]
+                batch_log_probs = log_probs[batch_indices]
+                batch_returns = returns[batch_indices]
+                batch_advantages = advantages[batch_indices]
 
                 # Input states to the model, get logits and values according to current policy
                 logits, values_pred = self.model(batch_states)
@@ -174,13 +179,14 @@ class PPOAgent:
                 # Update total losses
                 total_policy_loss += policy_loss.item()
                 total_value_loss += value_loss.item()
+                update_count += 1
 
                 # Backpropagation
                 self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()
 
-        return total_policy_loss, total_value_loss
+        return total_policy_loss / update_count, total_value_loss / update_count
 
     def train(self):
         """Main training loop for the PPO agent."""
