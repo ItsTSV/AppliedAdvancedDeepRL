@@ -6,7 +6,7 @@
 # The second part (config) is used to change hyperparameter settings of agents.
 # Changing it adjusts the way agents behave and learn.
 project: "ReinforcementLearning"
-name: "PPO PoleBalancing-v1"
+name: "PPO PoleBalancing-v1 with values"
 dir: "../logs"
 notes: "Testing how modular, correct and configurable my PPO implementation is"
 mode: "online"
@@ -22,3 +22,5 @@ config:
   learning_rate_shared: 0.0005
   learning_rate_actor: 0.0005
   learning_rate_critic: 0.001
+  value_loss_coef: 0.5
+  entropy_coef: 0.01

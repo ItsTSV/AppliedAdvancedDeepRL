@@ -67,15 +67,15 @@ class PPOAgent:
         self,
         rewards: torch.tensor,
         values: torch.tensor,
-        next_value: torch.tensor,
+        last_value: torch.tensor,
         dones: torch.tensor,
     ) -> torch.tensor:
         """Compute advantages using Generalized Advantage Estimation (GAE)."""
         advantages = torch.zeros_like(rewards, dtype=torch.float32).to(self.device)
         gae = 0.0
         gamma = self.wdb.get_hyperparameter("gamma")
-        lam = self.wdb.get_hyperparameter("lambda")
-        values = torch.cat([values, next_value], dim=0)
+        lmbda = self.wdb.get_hyperparameter("lambda")
+        values = torch.cat([values, last_value], dim=0)
 
         for step in reversed(range(len(rewards))):
             delta = (
@@ -83,7 +83,7 @@ class PPOAgent:
                 + gamma * (1 - dones[step]) * values[step + 1]
                 - values[step]
             )
-            gae = delta + gamma * lam * (1 - dones[step]) * gae
+            gae = delta + gamma * lmbda * (1 - dones[step]) * gae
             advantages[step] = gae
 
         return advantages
@@ -118,6 +118,7 @@ class PPOAgent:
 
         for _ in range(epoch_count):
             for i in range(0, len(states), batch_size):
+                # Create batches
                 end = i + batch_size
                 batch_states = states[i:end]
                 batch_actions = actions[i:end]
@@ -125,23 +126,42 @@ class PPOAgent:
                 batch_returns = returns[i:end]
                 batch_advantages = advantages[i:end]
 
+                # Input states to the model, get logits and values according to current policy
                 logits, values_pred = self.model(batch_states)
                 values_pred = values_pred.squeeze(-1)
                 action_probs = torch.softmax(logits, dim=-1)
                 dist = torch.distributions.Categorical(action_probs)
                 new_log_probs = dist.log_prob(batch_actions)
 
-                # PPO Loss
+                # Get the entropy for the current policy
+                entropy = dist.entropy().mean()
+
+                # Compute a ratio r_t between new and old log probabilities
+                # Uses torch.exp to avoid unstable values
                 ratio = torch.exp(new_log_probs - batch_log_probs)
+
+                # First part of the surrogate loss r_t * A_t
                 surr1 = ratio * batch_advantages
+
+                # The second part of the surrogate loss r_t * A_t
+                # Clipping avoids large updates which cause unstability
                 surr2 = (
                     torch.clamp(ratio, 1.0 - clip_eps, 1.0 + clip_eps)
                     * batch_advantages
                 )
+
+                # Compute the policy loss (negative of the surrogate loss)
                 policy_loss = -torch.min(surr1, surr2).mean()
 
+                # Compute the value loss (mean squared error)
                 value_loss = torch.nn.functional.mse_loss(values_pred, batch_returns)
-                loss = policy_loss + 0.5 * value_loss
+
+                # Total loss = policy loss + value loss - entropy (to encourage exploration)
+                loss = (
+                    policy_loss
+                    + self.wdb.get_hyperparameter("value_loss_coef") * value_loss
+                    - self.wdb.get_hyperparameter("entropy_coef") * entropy
+                )
 
                 # Update total losses
                 total_policy_loss += policy_loss.item()
