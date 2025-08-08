@@ -20,7 +20,7 @@ config:
   ppo_epochs: 8                             # How many epochs to train on each episode?
   batch_size: 2048                          # How many steps are in each batch?
   clip_epsilon: 0.2                         # How much is the policy clipped?
-  learning_rate_shared: 0.0005              # Learning rate for neural network
+  learning_rate_shared: 0.0005              # Learning rate for shared layers
   learning_rate_actor: 0.0005               # Learning rate for actor head
   learning_rate_critic: 0.001               # Learning rate for critic head
   value_loss_coef: 0.5                      # How much is the value loss weighted?
