@@ -1,4 +1,6 @@
 import gymnasium as gym
+from gymnasium import wrappers
+import numpy as np
 
 
 class EnvironmentManager:
@@ -16,6 +18,30 @@ class EnvironmentManager:
         self.env = gym.make(name, render_mode=render_mode)
         self.episode_steps = 0
         self.episode_reward = 0
+
+    def build_mujoco(self):
+        """Wraps the environment in wrappers that are used for MuJoCo.
+
+        Clip actions -- normalises the input action to [-1, 1] range.
+        Normalize Observations -- normalises the observation space to have 0 mean and unit variance.
+        Normalize Rewards -- normalises the rewards to have +- fixed variance.
+        Transform Observation -- applies function to observations (clipping them in [-10, 10]).
+        Transform Reward -- applies function to rewards (clipping them in [-10, 10]).
+        """
+        if "mujoco" not in self.env.spec.id:
+            raise ValueError("This method is only for MuJoCo environments.")
+
+        self.env = wrappers.ClipAction(self.env)
+        self.env = wrappers.NormalizeObservation(self.env)
+        self.env = wrappers.NormalizeReward(self.env)
+        self.env = wrappers.TransformObservation(
+            self.env,
+            lambda observation: np.clip(observation, -10, 10),
+            self.env.observation_space,
+        )
+        self.env = wrappers.TransformReward(
+            self.env, lambda reward: np.clip(reward, -10, 10)
+        )
 
     def get_dimensions(self) -> tuple:
         """Returns state and observation space dimension"""
