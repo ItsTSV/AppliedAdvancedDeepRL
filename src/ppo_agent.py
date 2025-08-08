@@ -64,6 +64,21 @@ class PPOAgent:
 
         return action.item(), log_prob.item(), value.item()
 
+    def evaluate_actions(self, batch_states: torch.tensor, batch_actions: torch.tensor) -> tuple:
+        """Evaluates actions for a batch of states.
+
+        Returns:
+            tuple: A tuple containing the action distribution, log probabilities, value estimates, and entropy.
+        """
+        logits, values_pred = self.model(batch_states)
+        values_pred = values_pred.squeeze(-1)
+        action_probs = torch.softmax(logits, dim=-1)
+        dist = torch.distributions.Categorical(action_probs)
+        new_log_probs = dist.log_prob(batch_actions)
+        entropy = dist.entropy().mean()
+
+        return dist, new_log_probs, values_pred, entropy
+
     def compute_advantages(
         self,
         rewards: torch.tensor,
@@ -140,14 +155,7 @@ class PPOAgent:
                 batch_advantages = advantages[batch_indices]
 
                 # Input states to the model, get logits and values according to current policy
-                logits, values_pred = self.model(batch_states)
-                values_pred = values_pred.squeeze(-1)
-                action_probs = torch.softmax(logits, dim=-1)
-                dist = torch.distributions.Categorical(action_probs)
-                new_log_probs = dist.log_prob(batch_actions)
-
-                # Get the entropy for the current policy
-                entropy = dist.entropy().mean()
+                dist, new_log_probs, values_pred, entropy = self.evaluate_actions(batch_states, batch_actions)
 
                 # Compute a ratio r_t between new and old log probabilities
                 # Uses torch.exp to avoid unstable values
