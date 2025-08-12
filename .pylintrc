@@ -252,7 +252,7 @@ generated-members=
 [FORMAT]
 
 # Maximum number of characters on a single line.
-max-line-length=100
+max-line-length=120
 
 # lines made too long by directives to pytype.
 

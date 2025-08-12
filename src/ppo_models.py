@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 
-class ActorCriticNet(nn.Module):
+class DiscreteActorCriticNet(nn.Module):
     """Discrete Actor-Critic Network for PPO.
 
     Uses a shared network for both actor and critic heads. This will come in handy

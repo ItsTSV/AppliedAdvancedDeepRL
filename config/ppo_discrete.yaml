@@ -6,15 +6,18 @@
 # The second part (config) is used to change hyperparameter settings of agents.
 # Changing it adjusts the way agents behave and learn.
 project: "ReinforcementLearning"
-name: "PPO PoleBalancing-v1 base refactor"
+name: "PPO CartPole-v1"
 dir: "../logs"
-notes: "PPO Testing after massive refactorization"
+notes: "Training of CartPole -- everything should work properly."
 mode: "online"
 monitor_gym: "False"
 config:
   environment: "CartPole-v1"                # Environment to use
+  model: "discrete"                         # What kind of model to use?
+  save_dir: "../models/"                    # Where to save model?
+  save_name: "CartPole.pth"                 # Model name
   episodes: 500                             # For how many episodes will agent train?
-  max_steps: 500                            # How many steps before the episode is terminated?
+  max_steps: 999                            # How many steps before the episode is terminated?
   gamma: 0.99                               # Discount factor for future rewards
   lambda: 0.95                              # GAE tradeoff parameter
   ppo_epochs: 8                             # How many epochs to train on each episode?
