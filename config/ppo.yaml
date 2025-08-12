@@ -6,9 +6,9 @@
 # The second part (config) is used to change hyperparameter settings of agents.
 # Changing it adjusts the way agents behave and learn.
 project: "ReinforcementLearning"
-name: "PPO PoleBalancing-v1 Refactor"
+name: "PPO PoleBalancing-v1 base refactor"
 dir: "../logs"
-notes: "Testing PPO -- after refactoring for the sake of modularity"
+notes: "PPO Testing after massive refactorization"
 mode: "online"
 monitor_gym: "False"
 config:

@@ -1,7 +1,7 @@
 from wandb_wrapper import WandbWrapper
 import numpy as np
 from environment_manager import EnvironmentManager
-from ppo_agent import PPOAgent
+from ppo_agent_discrete import PPOAgentDiscrete
 from ppo_models import ActorCriticNet
 
 # Initialize WandbWrapper
@@ -16,7 +16,7 @@ action_space, observation_space = env.get_dimensions()
 model = ActorCriticNet(action_space, observation_space)
 
 # Initialize PPO agent
-agent = PPOAgent(env, wdb, model)
+agent = PPOAgentDiscrete(env, wdb, model)
 
 # Start training
 agent.train()
