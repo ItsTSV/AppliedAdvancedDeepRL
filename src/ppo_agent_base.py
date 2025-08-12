@@ -1,20 +1,16 @@
-import numpy
+import numpy as np
 import torch
+from abc import ABC, abstractmethod
+from collections import deque
 from environment_manager import EnvironmentManager
 from wandb_wrapper import WandbWrapper
 from ppo_memory import RolloutBuffer
-from abc import ABC, abstractmethod
 
 
 class PPOAgentBase(ABC):
     """Agent that serves as a base for PPO algorithm. Contains common methods and properties."""
 
-    def __init__(
-        self,
-        environment: EnvironmentManager,
-        wandb: WandbWrapper,
-        model
-    ):
+    def __init__(self, environment: EnvironmentManager, wandb: WandbWrapper, model):
         """Initializes the PPO agent with the environment, wandb logger, model, and device.
 
         Args:
@@ -29,7 +25,7 @@ class PPOAgentBase(ABC):
         self.memory = RolloutBuffer()
 
     @abstractmethod
-    def get_action(self, state: numpy.ndarray) -> tuple:
+    def get_action(self, state: np.ndarray) -> tuple:
         """Selects an action based on the current state using the model."""
         pass
 
@@ -41,7 +37,7 @@ class PPOAgentBase(ABC):
         pass
 
     @abstractmethod
-    def optimize_model(self, final_state: numpy.ndarray) -> tuple:
+    def optimize_model(self, final_state: np.ndarray) -> tuple:
         """Optimizes the model using the collected rollout data."""
         pass
 
@@ -78,6 +74,7 @@ class PPOAgentBase(ABC):
         for episode in range(self.wdb.get_hyperparameter("episodes")):
             state = self.env.reset()
             self.memory.clear()
+            reward_buffer = deque([0] * 10, maxlen=10)
 
             for _ in range(self.wdb.get_hyperparameter("max_steps")):
                 # Get action from the model
@@ -92,8 +89,14 @@ class PPOAgentBase(ABC):
 
                 # If the episode is done, break the loop and optionally print for sanity check
                 if done:
+                    _, episode_reward = self.env.get_episode_info()
+                    reward_buffer.append(episode_reward)
+
                     if episode % 10 == 0:
-                        print(f"Episode {episode} done.")
+                        mean = np.sum(reward_buffer) / 10
+                        print(
+                            f"Episode {episode} done: mean reward over last ten episodes: {mean}"
+                        )
                     break
 
             # Perform an optimisation step

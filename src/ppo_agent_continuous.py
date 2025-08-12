@@ -1,4 +1,4 @@
-import numpy
+import numpy as np
 import torch
 from torch.distributions import Normal
 from environment_manager import EnvironmentManager
@@ -32,11 +32,11 @@ class PPOAgentContinuous(PPOAgentBase):
             eps=1e-5,
         )
 
-    def get_action(self, state: numpy.ndarray) -> tuple:
+    def get_action(self, state: np.ndarray) -> tuple:
         """Selects an action based on the current state using the model.
 
         Args:
-            state (numpy.ndarray): The current state of the environment.
+            state (np.ndarray): The current state of the environment.
 
         Returns:
             tuple: A tuple containing the selected action, its log probability and value estimate.
@@ -61,7 +61,7 @@ class PPOAgentContinuous(PPOAgentBase):
 
         return dist, new_log_probs, entropy, values_pred
 
-    def optimize_model(self, final_state: numpy.ndarray) -> tuple:
+    def optimize_model(self, final_state: np.ndarray) -> tuple:
         """Optimizes the model using the collected rollout data.
 
         Returns:

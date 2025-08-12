@@ -1,4 +1,4 @@
-import numpy
+import numpy as np
 import torch
 from environment_manager import EnvironmentManager
 from wandb_wrapper import WandbWrapper
@@ -41,11 +41,11 @@ class PPOAgentDiscrete(PPOAgentBase):
             eps=1e-5,  # https://iclr-blog-track.github.io/2022/03/25/ppo-implementation-details/
         )
 
-    def get_action(self, state: numpy.ndarray) -> tuple:
+    def get_action(self, state: np.ndarray) -> tuple:
         """Selects an action based on the current state using the model.
 
         Args:
-            state (numpy.ndarray): The current state of the environment.
+            state (np.ndarray): The current state of the environment.
 
         Returns:
             tuple: A tuple containing the selected action, its log probability and value estimate.
@@ -78,7 +78,7 @@ class PPOAgentDiscrete(PPOAgentBase):
 
         return dist, new_log_probs, values_pred, entropy
 
-    def optimize_model(self, final_state: numpy.ndarray) -> tuple:
+    def optimize_model(self, final_state: np.ndarray) -> tuple:
         """Optimizes the model using the collected rollout data.
 
         Returns:
@@ -118,7 +118,7 @@ class PPOAgentDiscrete(PPOAgentBase):
 
             for i in range(0, len(indices), batch_size):
                 # Create batches
-                batch_indices = indices[i : i + batch_size]
+                batch_indices = indices[i:i + batch_size]
                 batch_states = states[batch_indices]
                 batch_actions = actions[batch_indices]
                 batch_log_probs = log_probs[batch_indices]
