@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+import os
 from abc import ABC, abstractmethod
 from collections import deque
 from environment_manager import EnvironmentManager
@@ -71,10 +72,12 @@ class PPOAgentBase(ABC):
 
     def train(self):
         """Main training loop for the PPO agent."""
+        best_mean = float("-inf")
+        reward_buffer = deque([0] * 10, maxlen=10)
+
         for episode in range(self.wdb.get_hyperparameter("episodes")):
             state = self.env.reset()
             self.memory.clear()
-            reward_buffer = deque([0] * 10, maxlen=10)
 
             for _ in range(self.wdb.get_hyperparameter("max_steps")):
                 # Get action from the model
@@ -89,14 +92,24 @@ class PPOAgentBase(ABC):
 
                 # If the episode is done, break the loop and optionally print for sanity check
                 if done:
-                    _, episode_reward = self.env.get_episode_info()
+                    episode_steps, episode_reward = self.env.get_episode_info()
                     reward_buffer.append(episode_reward)
+                    mean = np.sum(reward_buffer) / 10
 
-                    if episode % 10 == 0:
-                        mean = np.sum(reward_buffer) / 10
+                    # Save model callback
+                    if mean > best_mean:
+                        best_mean = mean
+                        self.save_model()
                         print(
-                            f"Episode {episode} done: mean reward over last ten episodes: {mean}"
+                            f"Episode {episode} -- saving model with new best mean reward: {mean}"
                         )
+
+                    # Sanity check report
+                    if episode % 10 == 0:
+                        print(
+                            f"Episode {episode} finished in {episode_steps} steps with reward {episode_reward}"
+                        )
+
                     break
 
             # Perform an optimisation step
@@ -116,3 +129,20 @@ class PPOAgentBase(ABC):
                     "policy_loss": policy_loss,
                 }
             )
+
+    def save_model(self):
+        """Saves state dict of the model"""
+        path = self.wdb.get_hyperparameter("save_dir")
+        name = self.wdb.get_hyperparameter("save_name")
+        if not os.path.exists(path):
+            raise FileNotFoundError("Save dir does not exist!")
+
+        torch.save(self.model.state_dict(), path + name)
+
+    def load_model(self, path):
+        """Loads state dict of the model"""
+        if not os.path.exists(path):
+            raise FileNotFoundError("Path does not exist!")
+
+        self.model.load_state_dict(torch.load(path, weights_only=True))
+        self.model.eval()
