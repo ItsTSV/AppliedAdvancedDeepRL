@@ -2,7 +2,7 @@ import numpy as np
 import torch
 from environment_manager import EnvironmentManager
 from wandb_wrapper import WandbWrapper
-from ppo_models import ActorCriticNet
+from ppo_models import DiscreteActorCriticNet
 from ppo_agent_base import PPOAgentBase
 
 
@@ -13,14 +13,14 @@ class PPOAgentDiscrete(PPOAgentBase):
         self,
         environment: EnvironmentManager,
         wandb: WandbWrapper,
-        model: ActorCriticNet,
+        model: DiscreteActorCriticNet,
     ):
         """Initializes the PPO agent with the environment, wandb logger, model, and device.
 
         Args:
             environment (EnvironmentManager): The environment in which the agent operates.
             wandb (WandbWrapper): Wandb wrapper for tracking and hyperparameter management.
-            model (ActorCriticNet): The neural network model used by the agent.
+            model (DiscreteActorCriticNet): The neural network model used by the agent.
         """
         super().__init__(environment, wandb, model)
         self.optimizer = torch.optim.Adam(
