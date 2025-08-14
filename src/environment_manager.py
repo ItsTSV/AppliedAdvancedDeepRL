@@ -19,8 +19,8 @@ class EnvironmentManager:
         self.episode_steps = 0
         self.episode_reward = 0
 
-    def build_mujoco(self):
-        """Wraps the environment in wrappers that are used for MuJoCo.
+    def build_continuous(self):
+        """Wraps itself in wrappers that are used for continuous environments.
 
         Clip actions -- normalises the input action to [-1, 1] range.
         Normalize Observations -- normalises the observation space to have 0 mean and unit variance.
@@ -28,9 +28,6 @@ class EnvironmentManager:
         Transform Observation -- applies function to observations (clipping them in [-10, 10]).
         Transform Reward -- applies function to rewards (clipping them in [-10, 10]).
         """
-        if "mujoco" not in self.env.spec.id:
-            raise ValueError("This method is only for MuJoCo environments.")
-
         self.env = wrappers.ClipAction(self.env)
         self.env = wrappers.NormalizeObservation(self.env)
         self.env = wrappers.NormalizeReward(self.env)

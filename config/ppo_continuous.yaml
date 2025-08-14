@@ -5,17 +5,18 @@
 #
 # The second part (config) is used to change hyperparameter settings of agents.
 # Changing it adjusts the way agents behave and learn.
-project: "ReinforcementLearning"
-name: "PPO MountainCarContinuous-v0"
+project: "RL MountainCar"
+name: "PPO Continuous"
 dir: "../logs"
-notes: "Training of MountainCar -- everything should work properly."
+notes: "Testing algorithm functionality, logging and model saving -- continuous PPO."
 mode: "online"
 monitor_gym: "False"
 config:
   environment: "MountainCarContinuous-v0"   # Environment to use
   model: "continuous"                       # What kind of model to use?
   save_dir: "../models/"                    # Where to save model?
-  save_name: "MountainCar.pth"              # Model name
+  save_name: "MountainCar"                  # Model name
+  save_interval: 25                         # How many previous episodes will be used to calculate mean reward?
   episodes: 200                             # For how many episodes will agent train?
   max_steps: 999                            # How many steps before the episode is terminated?
   gamma: 0.999                              # Discount factor for future rewards (long horizon)

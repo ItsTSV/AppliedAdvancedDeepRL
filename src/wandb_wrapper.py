@@ -38,6 +38,12 @@ class WandbWrapper:
     def log(self, data: dict) -> None:
         self.run.log(data)
 
+    def log_model(self, name: str, path: str) -> None:
+        """Saves model to wandb"""
+        artifact = wandb.Artifact(name, type="model")
+        artifact.add_file(path)
+        self.run.log_artifact(artifact)
+
     def finish(self) -> None:
         self.run.finish()
 
