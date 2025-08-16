@@ -17,11 +17,11 @@ class DiscreteActorCriticNet(nn.Module):
             nn.ReLU(),
             nn.Linear(64, 64),
             nn.ReLU(),
-            nn.Linear(64, 32),
+            nn.Linear(64, 64),
             nn.ReLU(),
         )
-        self.actor_head = nn.Linear(32, action_space_size)
-        self.critic_head = nn.Linear(32, 1)
+        self.actor_head = nn.Linear(64, action_space_size)
+        self.critic_head = nn.Linear(64, 1)
 
     def forward(self, x: torch.tensor) -> tuple:
         """Forward pass through the network.
@@ -50,9 +50,9 @@ class ContinuousActorCriticNet(nn.Module):
             nn.ReLU(),
             nn.Linear(64, 64),
             nn.ReLU(),
-            nn.Linear(64, 32),
+            nn.Linear(64, 64),
             nn.ReLU(),
-            nn.Linear(32, action_space_size),
+            nn.Linear(64, action_space_size),
         )
 
         self.actor_log_st = nn.Parameter(torch.zeros(action_space_size))
@@ -62,9 +62,9 @@ class ContinuousActorCriticNet(nn.Module):
             nn.ReLU(),
             nn.Linear(64, 64),
             nn.ReLU(),
-            nn.Linear(64, 32),
+            nn.Linear(64, 64),
             nn.ReLU(),
-            nn.Linear(32, 1),
+            nn.Linear(64, 1),
         )
 
     def forward(self, x: torch.tensor) -> tuple:

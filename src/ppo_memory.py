@@ -6,7 +6,6 @@ import torch
 @dataclass
 class RolloutStep:
     """Data structure to hold a single step in the rollout buffer."""
-
     state: np.ndarray
     action: np.ndarray
     logprob: float
