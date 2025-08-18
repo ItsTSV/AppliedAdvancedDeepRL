@@ -27,7 +27,7 @@ class WandbWrapper:
             config=self.hyperparameters,
             settings=wandb.Settings(quiet=True)
         )
-        self.run.define_metric("*", step_metric="episode")
+        self.run.define_metric("*", step_metric="Total Steps")
 
     def get_hyperparameter(self, name: str):
         """Gets hyperparameter from given configuration"""

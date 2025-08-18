@@ -72,15 +72,18 @@ class PPOAgentBase(ABC):
 
     def train(self):
         """Main training loop for the PPO agent."""
+        episode = 0
+        total_steps = 0
+        max_steps = self.wdb.get_hyperparameter("total_steps")
         best_mean = float("-inf")
         save_interval = self.wdb.get_hyperparameter("save_interval")
         reward_buffer = deque([float("-inf")] * save_interval, maxlen=save_interval)
 
-        for episode in range(self.wdb.get_hyperparameter("episodes")):
+        while True:
             state = self.env.reset()
             self.memory.clear()
 
-            for _ in range(self.wdb.get_hyperparameter("max_steps")):
+            for _ in range(self.wdb.get_hyperparameter("episode_steps")):
                 # Get action from the model
                 action, log_prob, value = self.get_action(state)
 
@@ -93,7 +96,12 @@ class PPOAgentBase(ABC):
 
                 # If the episode is done, break the loop and optionally print for sanity check
                 if done:
+                    # Update episode & steps info
                     episode_steps, episode_reward = self.env.get_episode_info()
+                    total_steps += episode_steps
+                    episode += 1
+
+                    # Calculate mean rewards in last episodes
                     reward_buffer.append(episode_reward)
                     mean = np.sum(reward_buffer) / save_interval
 
@@ -108,9 +116,9 @@ class PPOAgentBase(ABC):
                     # Sanity check report
                     if episode % 10 == 0:
                         print(
-                            f"Episode {episode} finished in {episode_steps} steps with reward {episode_reward}"
+                            f"Episode {episode} finished in {episode_steps} steps with reward {episode_reward}. "
+                            f"Total steps: {total_steps}/{max_steps}."
                         )
-
                     break
 
             # Perform an optimisation step
@@ -120,16 +128,19 @@ class PPOAgentBase(ABC):
             episode_steps, episode_reward = self.env.get_episode_info()
             self.wdb.log(
                 {
-                    "episode": episode,
-                    "steps": episode_steps,
-                    "reward": episode_reward,
-                    "mean_reward": (
-                        episode_reward / episode_steps if episode_steps > 0 else 0
-                    ),
-                    "value_loss": value_loss,
-                    "policy_loss": policy_loss,
+                    "Total Steps": total_steps,
+                    "Episode Length": episode_steps,
+                    "Episode Reward": episode_reward,
+                    "Rolling Return": np.mean(reward_buffer),
+                    "Value Loss": value_loss,
+                    "Policy Loss": policy_loss,
                 }
             )
+
+            # Terminate?
+            if total_steps > max_steps:
+                print("The training has successfully finished!")
+                break
 
         # When done, save the best model to wandb and close
         self.save_artifact()

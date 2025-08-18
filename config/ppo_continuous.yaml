@@ -17,8 +17,8 @@ config:
   save_dir: "../models/"                    # Where to save model?
   save_name: "MountainCar"                  # Model name
   save_interval: 25                         # How many previous episodes will be used to calculate mean reward?
-  episodes: 200                             # For how many episodes will agent train?
-  max_steps: 999                            # How many steps before the episode is terminated?
+  total_steps: 200000                       # For how many steps will the agent train?
+  episode_steps: 999                        # How many steps before the episode is terminated?
   gamma: 0.999                              # Discount factor for future rewards (long horizon)
   lambda: 0.95                              # GAE tradeoff parameter
   ppo_epochs: 10                            # How many epochs to train on each batch?
