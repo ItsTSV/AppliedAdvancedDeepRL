@@ -17,12 +17,13 @@ config:
   save_dir: "../models/"                    # Where to save model?
   save_name: "CartPole"                     # Model name
   save_interval: 25                         # How many previous episodes will be used to calculate mean reward?
-  total_steps: 200000                       # For how many steps will the agent train?
+  total_steps: 125000                       # For how many steps will the agent train?
   episode_steps: 999                        # How many steps before the episode is terminated?
   gamma: 0.99                               # Discount factor for future rewards
   lambda: 0.95                              # GAE tradeoff parameter
   ppo_epochs: 8                             # How many epochs to train on each episode?
-  batch_size: 2048                          # How many steps are in each batch?
+  rollout_length: 2048                      # How many steps fit into one rollout?
+  batch_size: 64                            # How many steps are in each batch?
   clip_epsilon: 0.2                         # How much is the policy clipped?
   learning_rate_shared: 0.0005              # Learning rate for shared layers
   learning_rate_actor: 0.0005               # Learning rate for actor head

@@ -81,9 +81,11 @@ class PPOAgentBase(ABC):
 
         while True:
             state = self.env.reset()
-            self.memory.clear()
 
             for _ in range(self.wdb.get_hyperparameter("episode_steps")):
+                # Update steps
+                total_steps += 1
+
                 # Get action from the model
                 action, log_prob, value = self.get_action(state)
 
@@ -91,14 +93,27 @@ class PPOAgentBase(ABC):
                 new_state, reward, done, _ = self.env.step(action)
 
                 # Add step to memory, change state
-                self.memory.add(state, action, log_prob, reward, value, done)
+                rollout_size = self.memory.add(
+                    state, action, log_prob, reward, value, done
+                )
                 state = new_state
+
+                # If the rollout length is achieved, optimise
+                if rollout_size == self.wdb.get_hyperparameter("rollout_length"):
+                    value_loss, policy_loss = self.optimize_model(state)
+                    self.memory.clear()
+                    self.wdb.log(
+                        {
+                            "Total Steps": total_steps,
+                            "Value Loss": value_loss,
+                            "Policy Loss": policy_loss,
+                        }
+                    )
 
                 # If the episode is done, break the loop and optionally print for sanity check
                 if done:
                     # Update episode & steps info
                     episode_steps, episode_reward = self.env.get_episode_info()
-                    total_steps += episode_steps
                     episode += 1
 
                     # Calculate mean rewards in last episodes
@@ -121,9 +136,6 @@ class PPOAgentBase(ABC):
                         )
                     break
 
-            # Perform an optimisation step
-            value_loss, policy_loss = self.optimize_model(state)
-
             # Logging episode results
             episode_steps, episode_reward = self.env.get_episode_info()
             self.wdb.log(
@@ -132,8 +144,6 @@ class PPOAgentBase(ABC):
                     "Episode Length": episode_steps,
                     "Episode Reward": episode_reward,
                     "Rolling Return": np.mean(reward_buffer),
-                    "Value Loss": value_loss,
-                    "Policy Loss": policy_loss,
                 }
             )
 

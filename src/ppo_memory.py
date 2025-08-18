@@ -6,6 +6,7 @@ import torch
 @dataclass
 class RolloutStep:
     """Data structure to hold a single step in the rollout buffer."""
+
     state: np.ndarray
     action: np.ndarray
     logprob: float
@@ -41,9 +42,10 @@ class RolloutBuffer:
         reward: float,
         value: float,
         finished: bool,
-    ):
+    ) -> int:
         """Adds a new step to the buffer."""
         self.memory.append(RolloutStep(state, action, logprob, reward, value, finished))
+        return len(self.memory)
 
     def clear(self):
         """Clears the buffer, removing all stored data"""
