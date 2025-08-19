@@ -12,13 +12,15 @@ notes: "Testing algorithm functionality, logging and model saving -- continuous 
 mode: "online"
 monitor_gym: "False"
 config:
+  # Environment, logging and saving control
   environment: "MountainCarContinuous-v0"   # Environment to use
-  model: "continuous"                       # What kind of model to use?
+  algorithm: "PPO Continuous"               # What kind of algorithm to use?
   save_dir: "../models/"                    # Where to save model?
-  save_name: "MountainCar"                  # Model name
+  save_name: "PPOMountainCar"               # Model name
   save_interval: 25                         # How many previous episodes will be used to calculate mean reward?
   total_steps: 75000                        # For how many steps will the agent train?
   episode_steps: 999                        # How many steps before the episode is terminated?
+  # Algorithm hyperparameters
   gamma: 0.999                              # Discount factor for future rewards
   lambda: 0.95                              # GAE tradeoff parameter
   ppo_epochs: 10                            # How many epochs to train on each batch?

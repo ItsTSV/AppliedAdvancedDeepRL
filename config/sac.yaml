@@ -1,0 +1,29 @@
+# This file is used to configure logging and agents behaviour.
+#
+# The first part consists of Wandb info used to log experiments.
+# Changing it adjusts the way logging is stored and displayed.
+#
+# The second part (config) is used to change hyperparameter settings of agents.
+# Changing it adjusts the way agents behave and learn.
+project: "RL CartPole"
+name: "SAC"
+dir: "../logs"
+notes: "Testing algorithm functionality, logging and model saving -- SAC."
+mode: "online"
+monitor_gym: "False"
+config:
+  # Environment, logging and saving control
+  environment: "MountainCarContinuous-v0"   # Environment to use
+  algorithm: "SAC"                          # What kind of algorithm to use?
+  save_dir: "../models/"                    # Where to save model?
+  save_name: "SACMountainCar"               # Model name
+  save_interval: 25                         # How many previous episodes will be used to calculate mean reward?
+  total_steps: 75000                        # For how many steps will the agent train?
+  episode_steps: 999                        # How many steps before the episode is terminated?
+  # Algorithm hyperparameters
+  memory_size: 16000                        # How many steps can fit into the memory?
+  learning_rate_q: 0.003                    # Learning rate for Q-Network
+  learning_rate_actor: 0.003                # Learning rate for Actor network
+  entropy_temperature: 0.2                  #
+  polyak_param: 0.005                       #
+  warmup_steps: 512                         #

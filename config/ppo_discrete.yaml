@@ -6,19 +6,21 @@
 # The second part (config) is used to change hyperparameter settings of agents.
 # Changing it adjusts the way agents behave and learn.
 project: "RL CartPole"
-name: "PPO Discrete II"
+name: "PPO Discrete"
 dir: "../logs"
 notes: "Testing algorithm functionality, logging and model saving -- discrete PPO."
 mode: "online"
 monitor_gym: "False"
 config:
+  # Environment, logging and saving control
   environment: "CartPole-v1"                # Environment to use
-  model: "discrete"                         # What kind of model to use?
+  algorithm: "PPO Discrete"                 # What kind of algorithm to use?
   save_dir: "../models/"                    # Where to save model?
-  save_name: "CartPole"                     # Model name
+  save_name: "PPOCartPole"                  # Model name
   save_interval: 25                         # How many previous episodes will be used to calculate mean reward?
   total_steps: 125000                       # For how many steps will the agent train?
   episode_steps: 999                        # How many steps before the episode is terminated?
+  # Algorithm hyperparameters
   gamma: 0.99                               # Discount factor for future rewards
   lambda: 0.95                              # GAE tradeoff parameter
   ppo_epochs: 8                             # How many epochs to train on each episode?

@@ -5,7 +5,7 @@ import torch
 class ReplayBuffer:
     """Buffer that serves as a storage for SAC experience data."""
 
-    def __init__(self, capacity: int, state_dim: int, action_dim: int):
+    def __init__(self, capacity: int, action_dim: int, state_dim: int):
         """Initializes a replay buffer for storing experiences."""
         self.capacity = capacity
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
