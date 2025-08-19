@@ -5,7 +5,7 @@
 #
 # The second part (config) is used to change hyperparameter settings of agents.
 # Changing it adjusts the way agents behave and learn.
-project: "RL CartPole"
+project: "RL MountainCar"
 name: "SAC"
 dir: "../logs"
 notes: "Testing algorithm functionality, logging and model saving -- SAC."

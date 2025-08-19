@@ -101,7 +101,7 @@ class SACAgent:
                             }
                         )
 
-                # If the episode is done, finish logging etc. and optimise
+                # If the episode is done, finish logging and model saving
                 if done:
                     # Update episode & steps info
                     episode_steps, episode_reward = self.env.get_episode_info()
