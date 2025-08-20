@@ -1,7 +1,7 @@
 import numpy as np
 import torch
-import os
 import itertools
+import torch.nn.functional as F
 from collections import deque
 from environment_manager import EnvironmentManager
 from wandb_wrapper import WandbWrapper
@@ -50,14 +50,110 @@ class SACAgent:
             lr=self.wdb.get_hyperparameter("learning_rate_q"),
         )
 
-    def get_action(self, state: np.ndarray) -> np.ndarray:
-        pass
+    def get_action(self, state) -> tuple:
+        """Selects an action based on the current state using the actor.
 
-    def optimize_models(self) -> tuple[float, float]:
-        pass
+        Args:
+            state: The current state of the environment.
 
-    def update_targets(self):
-        pass
+        Returns:
+            action: Action tensor with [-1, 1 bounds]
+            log_prob: Log probability of selected action
+        """
+        if isinstance(state, np.ndarray):
+            state = torch.tensor(state, dtype=torch.float32).to(self.device)
+        log_std_min = self.wdb.get_hyperparameter("log_std_min")
+        log_std_max = self.wdb.get_hyperparameter("log_std_max")
+
+        with torch.no_grad():
+            mean, log_std = self.actor(state)
+
+            # Normalise (OpenAI version)
+            log_std = torch.tanh(log_std)
+            log_std = log_std_min + 0.5 * (log_std_max - log_std_min) * log_std + 1
+
+            # Distribution and re-parametrisation trick
+            std = log_std.exp()
+            normal = torch.distributions.Normal(mean, std)
+            z = normal.rsample()
+            action = torch.tanh(z)
+
+            # Because tanh was used, logprobs need to be adjusted
+            log_prob = normal.log_prob(z) - torch.log(1 - action.pow(2) + 1e-6)
+            log_prob = log_prob.sum(dim=-1, keepdim=True)
+
+            return action, log_prob
+
+    def optimize_q_networks(self) -> tuple[float, float, float]:
+        """Optimizes Q-policy networks using data from memory
+
+        Returns:
+            tuple (float, float. float): Total Q-Loss, Q1 loss, Q2 loss
+        """
+        # Sample data from memory
+        batch_size = self.wdb.get_hyperparameter("batch_size")
+        states, actions, rewards, next_states, dones = self.memory.sample(batch_size)
+        dones = dones.float()
+
+        # Compute next Q-values using Q-target networks
+        gamma = self.wdb.get_hyperparameter("gamma")
+        alpha = self.wdb.get_hyperparameter("entropy_temperature")
+        with torch.no_grad():
+            next_actions, next_log_probs = self.get_action(next_states)
+            next_targets_qnet1 = self.qnet1_target(next_states, next_actions)
+            next_targets_qnet2 = self.qnet2_target(next_states, next_actions)
+            min_next_targets = torch.min(next_targets_qnet1, next_targets_qnet2)
+            next_q_values = rewards + gamma * (1 - dones) * (
+                min_next_targets - alpha * next_log_probs
+            )
+
+        # Get current Q-values using Q-policy networks
+        q1_values = self.qnet1(states, actions)
+        q2_values = self.qnet2(states, actions)
+
+        # Compute losses
+        q1_loss = F.mse_loss(q1_values, next_q_values)
+        q2_loss = F.mse_loss(q2_values, next_q_values)
+        q_loss = q1_loss + q2_loss
+
+        # Optimise Q-policy networks via gradient descent
+        self.optimizer_q.zero_grad()
+        q_loss.backward()
+        self.optimizer_q.step()
+
+        return q_loss.item(), q1_loss.item(), q2_loss.item()
+
+    def optimize_actor_network(self):
+        """Optimizes actor network using data from memory"""
+        # Sample data from memory
+        batch_size = self.wdb.get_hyperparameter("batch_size")
+        states, _, _, _, _ = self.memory.sample(batch_size)
+
+        # Get next_actions and their Q-values
+        next_actions, log_probs = self.get_action(states)
+        q1_values = self.qnet1(states, next_actions)
+        q2_values = self.qnet2(states, next_actions)
+        min_q_values = torch.min(q1_values, q2_values)
+
+        # Compute actor loss
+        alpha = self.wdb.get_hyperparameter("entropy_temperature")
+        actor_loss = log_probs * alpha - min_q_values
+        actor_loss = actor_loss.mean()
+
+        # Run gradient descent
+        self.optimizer_actor.zero_grad()
+        actor_loss.backward()
+        self.optimizer_actor.step()
+
+        return actor_loss.item()
+
+    def polyak_update(self, source: torch.nn.Module, target: torch.nn.Module):
+        """Updates target networks by polyak averaging."""
+        tau = self.wdb.get_hyperparameter("tau")
+        for src_param, target_param in zip(source.parameters(), target.parameters()):
+            target_param.data.copy_(
+                tau * src_param.data + (1 - tau) * target_param.data
+            )
 
     def train(self):
         """Main training loop for the SAC agent."""
@@ -77,7 +173,8 @@ class SACAgent:
                 total_steps += 1
 
                 # Get action from the model
-                action = self.get_action(state)
+                action, _ = self.get_action(state)
+                action = action.item()
 
                 # Advance the environment
                 next_state, reward, done, _ = self.env.step(action)
@@ -88,8 +185,10 @@ class SACAgent:
 
                 # If a warmup period is over, run optimisation
                 if total_steps > warmup_steps:
-                    q_loss, actor_loss = self.optimize_models()
-                    self.update_targets()
+                    q_loss, q1_loss, q2_loss = self.optimize_q_networks()
+                    actor_loss = self.optimize_actor_network()
+                    self.polyak_update(self.qnet1, self.qnet1_target)
+                    self.polyak_update(self.qnet2, self.qnet2_target)
 
                     # Prevent wandb spam, log only occasionally
                     if total_steps % 100 == 0:
@@ -97,7 +196,9 @@ class SACAgent:
                             {
                                 "Total Steps": total_steps,
                                 "Q Loss": q_loss,
-                                "Actor Loss": actor_loss
+                                "Q1 Loss": q1_loss,
+                                "Q2 Loss": q2_loss,
+                                "Actor Loss": actor_loss,
                             }
                         )
 
