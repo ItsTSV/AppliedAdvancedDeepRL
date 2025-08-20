@@ -32,7 +32,7 @@ class SACAgent:
         self.qnet1_target = QNet(action_count, state_count).to(self.device)
         self.qnet2_target = QNet(action_count, state_count).to(self.device)
 
-        # Polyak averaging
+        # Target networks start with same weights as policy ones
         self.qnet1_target.load_state_dict(self.qnet1.state_dict())
         self.qnet2_target.load_state_dict(self.qnet2.state_dict())
 
@@ -123,7 +123,7 @@ class SACAgent:
 
         return q_loss.item(), q1_loss.item(), q2_loss.item()
 
-    def optimize_actor_network(self):
+    def optimize_actor_network(self) -> float:
         """Optimizes actor network using data from memory"""
         # Sample data from memory
         batch_size = self.wdb.get_hyperparameter("batch_size")
