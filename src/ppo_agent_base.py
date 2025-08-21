@@ -77,7 +77,7 @@ class PPOAgentBase(ABC):
         max_steps = self.wdb.get_hyperparameter("total_steps")
         best_mean = float("-inf")
         save_interval = self.wdb.get_hyperparameter("save_interval")
-        reward_buffer = deque([float("-inf")] * save_interval, maxlen=save_interval)
+        reward_buffer = deque(maxlen=save_interval)
 
         while True:
             state = self.env.reset()
@@ -157,7 +157,7 @@ class PPOAgentBase(ABC):
         self.wdb.finish()
 
     def play(self):
-        """Tests the agent in selected environment."""
+        """See the agent perform in selected environment."""
         state = self.env.reset()
         done = False
         while not done:
@@ -170,7 +170,7 @@ class PPOAgentBase(ABC):
         self.env.close()
 
     def save_model(self):
-        """Saves state dict of the model"""
+        """INFERENCE ONLY -- Saves state dict of the model"""
         path = self.wdb.get_hyperparameter("save_dir")
         name = self.wdb.get_hyperparameter("save_name")
         if not os.path.exists(path):
@@ -180,7 +180,7 @@ class PPOAgentBase(ABC):
         torch.save(self.model.state_dict(), save_path)
 
     def save_artifact(self):
-        """Saves state dict to wandb"""
+        """INFERENCE ONLY -- Saves state dict to wandb"""
         path = self.wdb.get_hyperparameter("save_dir")
         name = self.wdb.get_hyperparameter("save_name")
         if not os.path.exists(path):
@@ -190,7 +190,7 @@ class PPOAgentBase(ABC):
         self.wdb.log_model(name, save_path)
 
     def load_model(self, path):
-        """Loads state dict of the model"""
+        """INFERENCE ONLY -- Loads state dict of the model"""
         if not os.path.exists(path):
             raise FileNotFoundError("Path does not exist!")
 
