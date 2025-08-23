@@ -1,59 +1,57 @@
 import numpy as np
 import torch
+from tensordict import TensorDict
+from torchrl.data import (
+    TensorDictReplayBuffer,
+    PrioritizedSampler,
+    LazyTensorStorage,
+)
 
-"""
-    This is only temporary solution, as Rainbow DQN uses Prioritized Experience Replay.
-    Soon, this will be replaced with a proper implementation.
-"""
 
+class PrioritizedExperienceReplay:
+    """Wrapper for TorchRL buffer"""
 
-class ReplayBuffer:
-    """Buffer that serves as a storage for Rainbow DQN experience data."""
+    def __init__(self, memory_size: int, alpha: float, beta: float, batch_size: int, device):
+        """Inits Prioritized Experience Replay with given parameters"""
+        self.device = device
+        self.buffer = TensorDictReplayBuffer(
+            storage=LazyTensorStorage(max_size=memory_size, device=device),
+            sampler=PrioritizedSampler(
+                memory_size,
+                alpha=alpha,
+                beta=beta,
+            ),
+            priority_key="td_error",
+            batch_size=batch_size,
+        )
 
-    def __init__(self, capacity: int, state_dim: int):
-        """Initializes a replay buffer for storing experiences."""
-        self.capacity = capacity
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    def add(self, state: np.ndarray, action: int, reward: float, next_state: np.ndarray, done: bool):
+        """Adds episode experience to PER"""
+        data = TensorDict({
+            "state": torch.tensor(state, dtype=torch.float32).unsqueeze(0),
+            "next_state": torch.tensor(next_state, dtype=torch.float32).unsqueeze(0),
+            "action": torch.tensor(action, dtype=torch.int64).unsqueeze(0),
+            "reward": torch.tensor(reward, dtype=torch.float32).unsqueeze(0),
+            "done": torch.tensor(done, dtype=torch.float32).unsqueeze(0),
+            "td_error": torch.tensor(1.0, dtype=torch.float32).unsqueeze(0)
+        }, batch_size=[1]).to(self.device)
+        self.buffer.add(data)
 
-        self.states = np.zeros((capacity, state_dim), dtype=np.float32)
-        self.actions = np.zeros((capacity, 1), dtype=np.int64)
-        self.rewards = np.zeros((capacity, 1), dtype=np.float32)
-        self.next_states = np.zeros((capacity, state_dim), dtype=np.float32)
-        self.dones = np.zeros((capacity, 1), dtype=np.float32)
+    def sample(self, batch_size) -> tuple:
+        """Sample batch and return states, actions, rewards, next_states, dones, weights, indices"""
+        batch, info = self.buffer.sample(batch_size, return_info=True)
 
-        self.pos = 0
-        self.size = 0
+        # Squeeze to prevent weird tensor shape mismatch
+        states = batch["state"].squeeze(1)
+        actions = batch["action"]
+        rewards = batch["reward"]
+        next_states = batch["next_state"].squeeze(1)
+        dones = batch["done"]
+        weights = batch["td_error"]
+        indices = info["index"]
 
-    def add(
-        self,
-        state: np.ndarray,
-        action: int,
-        reward: float,
-        next_state: np.ndarray,
-        done: bool,
-    ) -> None:
-        """Adds a new experience to the buffer, recalculates the positions."""
-        self.states[self.pos] = state
-        self.actions[self.pos] = action
-        self.rewards[self.pos] = reward
-        self.next_states[self.pos] = next_state
-        self.dones[self.pos] = float(done)
+        return states, actions, rewards, next_states, dones, weights, indices
 
-        self.pos = (self.pos + 1) % self.capacity
-        self.size = min(self.size + 1, self.capacity)
-
-    def sample(self, batch_size: int) -> tuple:
-        """Samples a batch of random experiences from the buffer."""
-        indexes = np.random.randint(0, self.size, size=batch_size)
-
-        states = torch.tensor(self.states[indexes], device=self.device)
-        actions = torch.tensor(self.actions[indexes], device=self.device)
-        rewards = torch.tensor(self.rewards[indexes], device=self.device)
-        next_states = torch.tensor(self.next_states[indexes], device=self.device)
-        dones = torch.tensor(self.dones[indexes], device=self.device)
-
-        return states, actions, rewards, next_states, dones
-
-    def __len__(self) -> int:
-        """Returns the current size of the buffer."""
-        return self.size
+    def update_priorities(self, indices, td_errors):
+        """Update TD errors for given indices"""
+        self.buffer.update_priority(indices, td_errors)

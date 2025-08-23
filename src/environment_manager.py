@@ -51,6 +51,10 @@ class EnvironmentManager:
             len(self.env.observation_space.sample()),
         )
 
+    def get_state_shape(self) -> tuple:
+        """Returns state shape"""
+        return self.env.observation_space.shape
+
     def step(self, action) -> tuple:
         """Advances the environment, processes the output
 

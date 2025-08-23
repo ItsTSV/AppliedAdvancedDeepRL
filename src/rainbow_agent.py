@@ -5,8 +5,8 @@ import os
 import torch.nn.functional as F
 from environment_manager import EnvironmentManager
 from wandb_wrapper import WandbWrapper
-from rainbow_memory import ReplayBuffer
 from rainbow_models import DuelingDQN
+from rainbow_memory import PrioritizedExperienceReplay
 
 
 class RainbowAgent:
@@ -31,8 +31,13 @@ class RainbowAgent:
         self.target_network.load_state_dict(self.policy_network.state_dict())
 
         # Create memory
-        memory_size = self.wdb.get_hyperparameter("memory_size")
-        self.memory = ReplayBuffer(memory_size, state_count)
+        self.memory = PrioritizedExperienceReplay(
+            self.wdb.get_hyperparameter("memory_size"),
+            self.wdb.get_hyperparameter("alpha"),
+            self.wdb.get_hyperparameter("beta"),
+            self.wdb.get_hyperparameter("batch_size"),
+            self.device
+        )
 
         # Optimizer
         self.optimizer = torch.optim.Adam(
@@ -55,36 +60,50 @@ class RainbowAgent:
             return self.policy_network(state).argmax(1).item()
 
     def optimize(self) -> float:
-        """Performs optimization step, will later be adjusted."""
-        # EPSILON ADJUSTMENT -- WILL BE REMOVED
+        """Performs one optimization step for Double DQN with PER (TorchRL)."""
+        # Temporary epsilon decay
         self.epsilon *= self.epsilon_decay
 
-        # Sample data from memory
+        # Sample batch from memory
         batch_size = self.wdb.get_hyperparameter("batch_size")
-        states, actions, rewards, next_states, dones = self.memory.sample(batch_size)
-        dones = dones.float()
+        states, actions, rewards, next_states, dones, weights, indices = self.memory.sample(batch_size)
 
         # Get current Q-values
         current_q_values = self.policy_network(states).gather(1, actions)
 
         # Double DQN target
+        gamma = self.wdb.get_hyperparameter("gamma")
         with torch.no_grad():
             next_actions = self.policy_network(next_states).argmax(dim=1, keepdim=True)
             next_q_values = self.target_network(next_states).gather(1, next_actions)
-            target_q_values = rewards + (1 - dones) * self.wdb.get_hyperparameter("gamma") * next_q_values
+            target_q_values = rewards + (1 - dones) * gamma * next_q_values
 
-        # Loss and backpropagation
-        loss = F.smooth_l1_loss(current_q_values, target_q_values)
+        # TD-errors
+        td_errors = target_q_values - current_q_values
+
+        # Per-sample Smooth L1 loss
+        per_sample_loss = F.smooth_l1_loss(current_q_values, target_q_values, reduction="none").squeeze(1)
+
+        # Weighted PER loss
+        loss = (weights.squeeze(1) * per_sample_loss).mean()
+
+        # Gradient step
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
+
+        # Update priorities in memory
+        td_errors_to_update = td_errors.detach().abs().squeeze(1) + 1e-6
+        self.memory.update_priorities(indices, td_errors_to_update)
 
         return loss.item()
 
     def soft_tau_update(self):
         """Updates target networks by soft tau update (polyak averaging)."""
         tau = self.wdb.get_hyperparameter("tau")
-        for src_param, target_param in zip(self.policy_network.parameters(), self.target_network.parameters()):
+        for src_param, target_param in zip(
+            self.policy_network.parameters(), self.target_network.parameters()
+        ):
             target_param.data.copy_(
                 tau * src_param.data + (1 - tau) * target_param.data
             )
@@ -121,10 +140,9 @@ class RainbowAgent:
 
                     # Log policy to Wandb
                     if total_steps % 100 == 0:
-                        self.wdb.log({
-                            "Total Steps": total_steps,
-                            "Policy loss": policy_loss
-                        })
+                        self.wdb.log(
+                            {"Total Steps": total_steps, "Policy Loss": policy_loss}
+                        )
 
                 # If the episode is done, finish logging and model saving
                 if done:
@@ -159,7 +177,7 @@ class RainbowAgent:
                     "Total Steps": total_steps,
                     "Episode Length": episode_steps,
                     "Episode Reward": episode_reward,
-                    "Rolling Return": np.mean(reward_buffer)
+                    "Rolling Return": np.mean(reward_buffer),
                 }
             )
 
@@ -176,8 +194,9 @@ class RainbowAgent:
         """See the agent perform in selected environment."""
         state = self.env.reset()
         done = False
+        self.epsilon = 0
         while not done:
-            action, _ = self.get_action(state)
+            action = self.get_action(state)
             state, reward, done, _ = self.env.step(action)
             self.env.render()
 
