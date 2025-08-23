@@ -7,6 +7,7 @@ import torch.nn as nn
     Soon, this will be replaced with a proper implementation.
 """
 
+
 class DuelingDQN(nn.Module):
     """Dueling Deep Q-Network for Rainbow Agent"""
 

@@ -8,7 +8,7 @@
 project: "RL CartPole"
 name: "Rainbow"
 dir: "../logs"
-notes: "Testing algorithm functionality, logging and model saving -- Rainbow (DQN, Dueling)."
+notes: "Testing algorithm functionality, logging and model saving -- Rainbow (DQN, Double, Dueling)."
 mode: "online"
 monitor_gym: "False"
 config:
@@ -17,14 +17,14 @@ config:
   algorithm: "Rainbow"                      # What kind of algorithm to use?
   save_dir: "../models/"                    # Where to save model?
   save_name: "RainbowCartPole"              # Model name
-  save_interval: 25                         # How many previous episodes will be used to calculate mean reward?
-  total_steps: 75000                        # For how many steps will the agent train?
-  episode_steps: 999                        # How many steps before the episode is terminated?
+  save_interval: 20                         # How many previous episodes will be used to calculate mean reward?
+  total_steps: 50000                        # For how many steps will the agent train?
+  episode_steps: 500                        # How many steps before the episode is terminated?
   # Algorithm hyperparameters
-  memory_size: 15000                        # How many steps can fit into the memory?
-  learning_rate_policy: 0.001               # Learning rate for Q-Network
+  memory_size: 10000                        # How many steps can fit into the memory?
+  learning_rate_policy: 0.0005               # Learning rate for Q-Network
   gamma: 0.99                               # Discount factor
   epsilon_decay: 0.999                      # Only temporary! Later, noisy nets will be used
-  warmup_steps: 1024                        # How many steps before agents starts optimising?
-  batch_size: 128                           # How big will the batches used in optimization be?
-  tau: 0.005                                # Polyak parameter
+  warmup_steps: 500                         # How many steps before agents starts optimising?
+  batch_size: 64                            # How big will the batches used in optimization be?
+  tau: 0.01                                 # Polyak parameter

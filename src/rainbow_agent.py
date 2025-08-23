@@ -1,9 +1,8 @@
 import numpy as np
 import torch
 from collections import deque
-
-from torch.nn import MSELoss
-
+import os
+import torch.nn.functional as F
 from environment_manager import EnvironmentManager
 from wandb_wrapper import WandbWrapper
 from rainbow_memory import ReplayBuffer
@@ -63,6 +62,7 @@ class RainbowAgent:
         # Sample data from memory
         batch_size = self.wdb.get_hyperparameter("batch_size")
         states, actions, rewards, next_states, dones = self.memory.sample(batch_size)
+        dones = dones.float()
 
         # Get current Q-values
         current_q_values = self.policy_network(states).gather(1, actions)
@@ -74,7 +74,7 @@ class RainbowAgent:
             target_q_values = rewards + (1 - dones) * self.wdb.get_hyperparameter("gamma") * next_q_values
 
         # Loss and backpropagation
-        loss = MSELoss()(current_q_values, target_q_values)
+        loss = F.smooth_l1_loss(current_q_values, target_q_values)
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
@@ -172,11 +172,43 @@ class RainbowAgent:
         self.save_artifact()
         self.wdb.finish()
 
+    def play(self):
+        """See the agent perform in selected environment."""
+        state = self.env.reset()
+        done = False
+        while not done:
+            action, _ = self.get_action(state)
+            state, reward, done, _ = self.env.step(action)
+            self.env.render()
+
+        steps, reward = self.env.get_episode_info()
+        print(f"Test run finished in {steps} steps with {reward} reward!")
+        self.env.close()
+
     def save_model(self):
-        pass
+        """INFERENCE ONLY -- Saves state dict of the model"""
+        path = self.wdb.get_hyperparameter("save_dir")
+        name = self.wdb.get_hyperparameter("save_name")
+        if not os.path.exists(path):
+            raise FileNotFoundError("Save dir does not exist!")
+
+        save_path = path + name + ".pth"
+        torch.save(self.policy_network.state_dict(), save_path)
 
     def save_artifact(self):
-        pass
+        """INFERENCE ONLY -- Saves state dict to wandb"""
+        path = self.wdb.get_hyperparameter("save_dir")
+        name = self.wdb.get_hyperparameter("save_name")
+        if not os.path.exists(path):
+            raise FileNotFoundError("Save dir does not exist!")
 
-    def load_model(self):
-        pass
+        save_path = path + name + ".pth"
+        self.wdb.log_model(name, save_path)
+
+    def load_model(self, path):
+        """INFERENCE ONLY -- Loads model state dict"""
+        if not os.path.exists(path):
+            raise FileNotFoundError("Path does not exist!")
+
+        self.policy_network.load_state_dict(torch.load(path, weights_only=True))
+        self.policy_network.eval()
