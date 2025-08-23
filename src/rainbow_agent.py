@@ -36,7 +36,7 @@ class RainbowAgent:
             self.wdb.get_hyperparameter("alpha"),
             self.wdb.get_hyperparameter("beta"),
             self.wdb.get_hyperparameter("batch_size"),
-            self.device
+            self.device,
         )
 
         # Optimizer
@@ -60,13 +60,15 @@ class RainbowAgent:
             return self.policy_network(state).argmax(1).item()
 
     def optimize(self) -> float:
-        """Performs one optimization step for Double DQN with PER (TorchRL)."""
+        """Performs one optimization step for DQN + Double + Dueling + PER, will later be adjusted"""
         # Temporary epsilon decay
         self.epsilon *= self.epsilon_decay
 
         # Sample batch from memory
         batch_size = self.wdb.get_hyperparameter("batch_size")
-        states, actions, rewards, next_states, dones, weights, indices = self.memory.sample(batch_size)
+        states, actions, rewards, next_states, dones, weights, indices = (
+            self.memory.sample(batch_size)
+        )
 
         # Get current Q-values
         current_q_values = self.policy_network(states).gather(1, actions)
@@ -82,7 +84,9 @@ class RainbowAgent:
         td_errors = target_q_values - current_q_values
 
         # Per-sample Smooth L1 loss
-        per_sample_loss = F.smooth_l1_loss(current_q_values, target_q_values, reduction="none").squeeze(1)
+        per_sample_loss = F.smooth_l1_loss(
+            current_q_values, target_q_values, reduction="none"
+        ).squeeze(1)
 
         # Weighted PER loss
         loss = (weights.squeeze(1) * per_sample_loss).mean()

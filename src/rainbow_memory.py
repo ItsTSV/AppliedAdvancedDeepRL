@@ -11,7 +11,9 @@ from torchrl.data import (
 class PrioritizedExperienceReplay:
     """Wrapper for TorchRL buffer"""
 
-    def __init__(self, memory_size: int, alpha: float, beta: float, batch_size: int, device):
+    def __init__(
+        self, memory_size: int, alpha: float, beta: float, batch_size: int, device
+    ):
         """Inits Prioritized Experience Replay with given parameters"""
         self.device = device
         self.buffer = TensorDictReplayBuffer(
@@ -25,16 +27,26 @@ class PrioritizedExperienceReplay:
             batch_size=batch_size,
         )
 
-    def add(self, state: np.ndarray, action: int, reward: float, next_state: np.ndarray, done: bool):
+    def add(
+        self,
+        state: np.ndarray,
+        action: int,
+        reward: float,
+        next_state: np.ndarray,
+        done: bool,
+    ):
         """Adds episode experience to PER"""
-        data = TensorDict({
-            "state": torch.tensor(state, dtype=torch.float32).unsqueeze(0),
-            "next_state": torch.tensor(next_state, dtype=torch.float32).unsqueeze(0),
-            "action": torch.tensor(action, dtype=torch.int64).unsqueeze(0),
-            "reward": torch.tensor(reward, dtype=torch.float32).unsqueeze(0),
-            "done": torch.tensor(done, dtype=torch.float32).unsqueeze(0),
-            "td_error": torch.tensor(1.0, dtype=torch.float32).unsqueeze(0)
-        }, batch_size=[1]).to(self.device)
+        data = TensorDict(
+            {
+                "state": torch.tensor(state, dtype=torch.float32).unsqueeze(0),
+                "next_state": torch.tensor(next_state, dtype=torch.float32).unsqueeze(0),
+                "action": torch.tensor(action, dtype=torch.int64).unsqueeze(0),
+                "reward": torch.tensor(reward, dtype=torch.float32).unsqueeze(0),
+                "done": torch.tensor(done, dtype=torch.float32).unsqueeze(0),
+                "td_error": torch.tensor(1.0, dtype=torch.float32).unsqueeze(0),
+            },
+            batch_size=[1],
+        ).to(self.device)
         self.buffer.add(data)
 
     def sample(self, batch_size) -> tuple:
