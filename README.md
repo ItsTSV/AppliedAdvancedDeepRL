@@ -24,7 +24,7 @@ Rainbow DQN
   - [x] Dueling DQN
   - [x] Prioritised Experience Replay
   - [ ] Noisy Nets
-  - [ ] Multi-step learning
+  - [x] Multi-step learning
   - [ ] Distributional RL
 - [ ] Code level optimised
 - [x] Tested for implemented parts

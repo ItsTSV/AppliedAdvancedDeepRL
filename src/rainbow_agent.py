@@ -37,6 +37,8 @@ class RainbowAgent:
             self.wdb.get_hyperparameter("beta"),
             self.wdb.get_hyperparameter("batch_size"),
             self.device,
+            self.wdb.get_hyperparameter("gamma"),
+            self.wdb.get_hyperparameter("n_step"),
         )
 
         # Optimizer
@@ -73,12 +75,13 @@ class RainbowAgent:
         # Get current Q-values
         current_q_values = self.policy_network(states).gather(1, actions)
 
-        # Double DQN target
+        # Double DQN target with n-step gamma
         gamma = self.wdb.get_hyperparameter("gamma")
+        n_step = self.wdb.get_hyperparameter("n_step")
         with torch.no_grad():
             next_actions = self.policy_network(next_states).argmax(dim=1, keepdim=True)
             next_q_values = self.target_network(next_states).gather(1, next_actions)
-            target_q_values = rewards + (1 - dones) * gamma * next_q_values
+            target_q_values = rewards + (1 - dones) * (gamma**n_step) * next_q_values
 
         # TD-errors
         td_errors = target_q_values - current_q_values
@@ -97,8 +100,8 @@ class RainbowAgent:
         self.optimizer.step()
 
         # Update priorities in memory
-        td_errors_to_update = td_errors.detach().abs().squeeze(1) + 1e-6
-        self.memory.update_priorities(indices, td_errors_to_update)
+        td_errors = td_errors.detach().abs().squeeze(1) + 1e-6
+        self.memory.update_priorities(indices, td_errors)
 
         return loss.item()
 

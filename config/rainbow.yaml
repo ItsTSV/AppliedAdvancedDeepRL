@@ -8,7 +8,7 @@
 project: "RL CartPole"
 name: "Rainbow"
 dir: "../logs"
-notes: "Testing algorithm functionality, logging and model saving -- Rainbow (DQN, Double, Dueling)."
+notes: "Testing algorithm functionality, logging and model saving -- Rainbow (DQN, Double, Dueling, PER, N-step)."
 mode: "online"
 monitor_gym: "False"
 config:
@@ -28,5 +28,6 @@ config:
   warmup_steps: 500                         # How many steps before agents starts optimising?
   batch_size: 64                            # How big will the batches used in optimization be?
   tau: 0.01                                 # Polyak parameter
-  alpha: 0.4
-  beta: 0.6
+  alpha: 0.4                                # How much prioritization is used?
+  beta: 0.6                                 # Importance sampling negative exponent
+  n_step: 4                                 # How many steps are used in multistep update?
