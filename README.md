@@ -1,4 +1,14 @@
-## Reinforcement learning for robotics and complex  environments
+## Reinforcement learning for robotics and complex simulated environments
+
+### Environments to solve:
+- [ ] MuJoCo
+- [ ] Gymnasium-Robotics
+- [ ] ALE
+- [ ] VizDoom
+
+---
+
+### Algorithms to implement:
 
 Proximal Policy Optimization
 - [x] Implemented
@@ -31,6 +41,12 @@ Rainbow DQN
 - [ ] Used in complex simulated environments
 
 --- 
+
+### Misecellanous stuff to implement:
+- [x] Streamlit presentation app
+- [ ] Terminal app
+
+---
 
 ### Commands
 To ensure compactibility of all libraries (mainly torch and its components: torchrl, torchvision etc...), requirements.txt
