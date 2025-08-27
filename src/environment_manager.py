@@ -1,3 +1,4 @@
+import ale_py
 import gymnasium as gym
 from gymnasium import wrappers
 import numpy as np
@@ -20,7 +21,7 @@ class EnvironmentManager:
         self.episode_reward = 0
 
     def build_continuous(self):
-        """Wraps itself in wrappers that are used for continuous environments.
+        """Wraps itself in wrappers that are used for environments with continuous action space.
 
         Clip actions -- normalises the input action to [-1, 1] range.
         Normalize Observations -- normalises the observation space to have 0 mean and unit variance.
@@ -39,6 +40,19 @@ class EnvironmentManager:
         self.env = wrappers.TransformReward(
             self.env, lambda reward: np.clip(reward, -10, 10)
         )
+
+    def build_convolutional(self):
+        """Wraps itself in wrappers that are used for environments with continuous state space.
+
+        When the episode starts, randomly skips up to 10 steps to ensure stochasticity.
+        The environment images are scaled to width and height of 84x84; converted from RGB to gray scale and
+        pixel value is scaled from [0,255] to [0,1].
+        The frames are stacked, so the agent does know dynamic context.
+        """
+        self.env = wrappers.AtariPreprocessing(
+            self.env, noop_max=10, frame_skip=1, scale_obs=True
+        )
+        self.env = wrappers.FrameStackObservation(self.env, 4)
 
     def get_dimensions(self) -> tuple:
         """Returns state and observation space dimension"""
