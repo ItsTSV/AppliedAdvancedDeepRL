@@ -8,7 +8,7 @@
 project: "RL CartPole"
 name: "Rainbow"
 dir: "../logs"
-notes: "Testing algorithm functionality, logging and model saving -- Rainbow (DQN, Double, Dueling, PER, N-step)."
+notes: "Testing algorithm functionality, logging and model saving -- Rainbow (DQN, Double, Dueling, PER, N-step, NoisyNets)."
 mode: "online"
 monitor_gym: "False"
 config:
@@ -31,3 +31,4 @@ config:
   alpha: 0.4                                # How much prioritization is used?
   beta: 0.6                                 # Importance sampling negative exponent
   n_step: 4                                 # How many steps are used in multistep update?
+  sigma_init: 0.1                           # Exploration coefficient for NoisyNets (way too low, currently set for CartPole)

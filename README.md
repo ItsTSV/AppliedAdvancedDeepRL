@@ -33,9 +33,9 @@ Rainbow DQN
   - [x] Double DQN
   - [x] Dueling DQN
   - [x] Prioritised Experience Replay
-  - [ ] Noisy Nets
+  - [x] Noisy Nets
   - [x] Multi-step learning
-  - [ ] Distributional RL
+  - [ ] Distributional RL (C51)
 - [ ] Code level optimised
 - [x] Tested for implemented parts
 - [ ] Used in complex simulated environments

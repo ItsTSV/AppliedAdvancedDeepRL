@@ -1,39 +1,114 @@
 import torch
+import math
 import torch.nn as nn
+import torch.nn.functional as F
 
 
-"""
-    This is only temporary solution, as Rainbow DQN uses Noisy Nets.
-    Soon, this will be replaced with a proper implementation.
-"""
+class NoisyLinear(nn.Module):
+    """Implementation of NoisyNets paper: https://arxiv.org/abs/1706.10295v3"""
+
+    def __init__(self, input_size: int, output_size: int, sigma_init: float = 0.5):
+        """Creates Noisy layer with given input and output size
+
+        input_size (int): Dimensions of input tensor
+        output_size (int): Dimensions of output tensor
+        sigma_init (float): How much noise is added to weight and bias
+        """
+        super().__init__()
+        # IO
+        self.input_size = input_size
+        self.output_size = output_size
+        self.sigma_init = sigma_init
+
+        # Sigma
+        self.sigma_weight = nn.Parameter(torch.empty(output_size, input_size))
+        self.sigma_bias = nn.Parameter(torch.empty(output_size))
+
+        # Mu
+        self.mu_weight = nn.Parameter(torch.empty(output_size, input_size))
+        self.mu_bias = nn.Parameter(torch.empty(output_size))
+
+        # Epsilon
+        self.register_buffer("epsilon_weight", torch.empty(output_size, input_size))
+        self.register_buffer("epsilon_bias", torch.empty(output_size))
+
+        # Init
+        self.reset_parameters()
+        self.reset_noise()
+
+    def reset_parameters(self):
+        """Resets sigma and mu values."""
+        # Mu
+        mu_range = 1 / math.sqrt(self.input_size)
+        self.mu_weight.data.uniform_(-mu_range, mu_range)
+        self.mu_bias.data.uniform_(-mu_range, mu_range)
+
+        # Sigma
+        self.sigma_weight.data.fill_(self.sigma_init / math.sqrt(self.input_size))
+        self.sigma_bias.data.fill_(self.sigma_init / math.sqrt(self.output_size))
+
+    def _scale_noise(self, size: int) -> torch.Tensor:
+        """Applies scaling to the generated noise.
+
+        Generate random vector from Normal Distribution(0, 1) and apply transformation from the paper
+        f(x) = sign(x) * sqrt(|x|). This reduces number of generated features from input_size × output_size to
+        input_size + output_size."""
+        x = torch.randn(size)
+        return x.sign() * x.abs().sqrt()
+
+    def reset_noise(self):
+        """Resets noise values in networks.
+
+        Generates row and column noise vectors, creates nosie matrix by computing outer product;
+        sets epsilon weight and bias accordingly.
+        """
+        column_noise_vector = self._scale_noise(self.input_size)
+        row_noise_vector = self._scale_noise(self.output_size)
+
+        # Generate whole noise matrix (M_ij = row[i] * column[j])
+        self.epsilon_weight.copy_(row_noise_vector.ger(column_noise_vector))
+
+        # Bias is only row noise
+        self.epsilon_bias.copy_(row_noise_vector)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward pass via layer."""
+        if self.training:
+            weight = self.mu_weight + self.sigma_weight * self.epsilon_weight
+            bias = self.mu_bias + self.sigma_bias * self.epsilon_bias
+        else:
+            weight = self.mu_weight
+            bias = self.mu_bias
+
+        return F.linear(x, weight, bias)
 
 
-class DuelingDQN(nn.Module):
+class NoisyDuelingDQN(nn.Module):
     """Dueling Deep Q-Network for Rainbow Agent"""
 
-    def __init__(self, action_space_size: int, observation_space_size: int):
+    def __init__(self, action_space_size: int, observation_space_size: int, sigma_init: float):
         """Initialize network with given action and observation size"""
         super().__init__()
         self.network = nn.Sequential(
-            nn.Linear(observation_space_size, 128),
+            NoisyLinear(observation_space_size, 128, sigma_init),
             nn.ReLU(),
-            nn.Linear(128, 128),
+            NoisyLinear(128, 128, sigma_init),
             nn.ReLU(),
         )
 
-        self.advantage_head = nn.Linear(128, action_space_size)
-        self.value_head = nn.Linear(128, 1)
+        self.advantage_head = NoisyLinear(128, action_space_size, sigma_init)
+        self.value_head = NoisyLinear(128, 1, sigma_init)
 
-    def forward(self, x: torch.tensor) -> torch.tensor:
-        """Forward pass through the network.
+    def reset_noise(self):
+        """Resets NoisyNets"""
+        self.advantage_head.reset_noise()
+        self.value_head.reset_noise()
+        for layer in self.network:
+            if isinstance(layer, NoisyLinear):
+                layer.reset_noise()
 
-        Args:
-            x (torch.tensor): Input tensor representing the state.
-
-        Returns:
-            torch.tensor: Q-values for each action.
-
-        """
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward pass through the network."""
         x = self.network(x)
         values = self.value_head(x)
         advantages = self.advantage_head(x)
@@ -41,10 +116,10 @@ class DuelingDQN(nn.Module):
         return q_values
 
 
-class DuelingConvDQN(nn.Module):
+class NoisyDuelingConvDQN(nn.Module):
     """Convolutional Dueling Deep Q-Network for Rainbow Agent"""
 
-    def __init__(self, action_space_size: int, observation_space_size: int):
+    def __init__(self, action_space_size: int, observation_space_size: int, sigma_init: float):
         """Initializes network with given action and observation size"""
         super().__init__()
         # Convolutional part
@@ -59,21 +134,24 @@ class DuelingConvDQN(nn.Module):
 
         # Value and Advantage heads
         self.advantage_head = nn.Sequential(
-            nn.Linear(3136, 512), nn.ReLU(), nn.Linear(512, action_space_size)
+            NoisyLinear(3136, 512, sigma_init), nn.ReLU(), NoisyLinear(512, action_space_size, sigma_init)
         )
         self.value_head = nn.Sequential(
-            nn.Linear(3136, 512), nn.ReLU(), nn.Linear(512, 1)
+            NoisyLinear(3136, 512, sigma_init), nn.ReLU(), NoisyLinear(512, 1, sigma_init)
         )
 
-    def forward(self, x: torch.tensor) -> torch.tensor:
-        """Forward pass through the network.
+    def reset_noise(self):
+        """Resets NoisyNets"""
+        for layer in self.advantage_head:
+            if isinstance(layer, NoisyLinear):
+                layer.reset_noise()
 
-        Args:
-            x (torch.tensor): Input tensor representing the state.
+        for layer in self.value_head:
+            if isinstance(layer, NoisyLinear):
+                layer.reset_noise()
 
-        Returns:
-            torch.tensor: Q-values for each action.
-        """
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward pass through the network."""
         x = self.network(x)
         x = x.view(x.size(0), -1)
         advantages = self.advantage_head(x)

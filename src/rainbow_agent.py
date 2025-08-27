@@ -5,7 +5,7 @@ import os
 import torch.nn.functional as F
 from environment_manager import EnvironmentManager
 from wandb_wrapper import WandbWrapper
-from rainbow_models import DuelingDQN
+from rainbow_models import NoisyDuelingDQN
 from rainbow_memory import PrioritizedExperienceReplay
 
 
@@ -25,9 +25,10 @@ class RainbowAgent:
         self.action_count, state_count = self.env.get_dimensions()
 
         # Models
+        sigma_init = self.wdb.get_hyperparameter("sigma_init")
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.policy_network = DuelingDQN(self.action_count, state_count).to(self.device)
-        self.target_network = DuelingDQN(self.action_count, state_count).to(self.device)
+        self.policy_network = NoisyDuelingDQN(self.action_count, state_count, sigma_init).to(self.device)
+        self.target_network = NoisyDuelingDQN(self.action_count, state_count, sigma_init).to(self.device)
         self.target_network.load_state_dict(self.policy_network.state_dict())
 
         # Create memory
@@ -47,24 +48,17 @@ class RainbowAgent:
             lr=self.wdb.get_hyperparameter("learning_rate_policy"),
         )
 
-        # Epsilon -- Temporary solution, will be replaced by noisy nets
-        self.epsilon = 1
-        self.epsilon_decay = self.wdb.get_hyperparameter("epsilon_decay")
-
     def get_action(self, state: np.ndarray) -> int:
-        """Performs epsilon greedy selection, will later be replaced in favour of noisy nets!"""
-        random = np.random.random()
-        if random < self.epsilon:
-            return np.random.randint(0, self.action_count)
-
+        """Selects action using NoisyNets"""
+        self.policy_network.reset_noise()
         with torch.no_grad():
             state = torch.FloatTensor(state).unsqueeze(0).to(self.device)
             return self.policy_network(state).argmax(1).item()
 
     def optimize(self) -> float:
-        """Performs one optimization step for DQN + Double + Dueling + PER, will later be adjusted"""
-        # Temporary epsilon decay
-        self.epsilon *= self.epsilon_decay
+        """Performs one optimization step for DQN + Double + Dueling + PER + NoisyNets, will later be adjusted"""
+        # Reset noise
+        self.policy_network.reset_noise()
 
         # Sample batch from memory
         batch_size = self.wdb.get_hyperparameter("batch_size")
@@ -173,7 +167,7 @@ class RainbowAgent:
                     if episode % 10 == 0:
                         print(
                             f"Episode {episode} finished in {episode_steps} steps with reward {episode_reward}. "
-                            f"Total steps: {total_steps}/{max_steps}. Epsilon: {self.epsilon}"
+                            f"Total steps: {total_steps}/{max_steps}."
                         )
                     break
 
