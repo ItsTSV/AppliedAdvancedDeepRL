@@ -5,7 +5,7 @@ import os
 import torch.nn.functional as F
 from environment_manager import EnvironmentManager
 from wandb_wrapper import WandbWrapper
-from rainbow_models import NoisyDuelingDQN
+from rainbow_models import DuelingDQN
 from rainbow_memory import PrioritizedExperienceReplay
 
 
@@ -24,11 +24,15 @@ class RainbowAgent:
         self.wdb = wandb
         self.action_count, state_count = self.env.get_dimensions()
 
+        # Epsilon
+        self.epsilon = 1
+        self.epsilon_decay = self.wdb.get_hyperparameter("epsilon_decay")
+
         # Models
-        sigma_init = self.wdb.get_hyperparameter("sigma_init")
+        self.use_noisy = self.wdb.get_hyperparameter("use_noisy")
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.policy_network = NoisyDuelingDQN(self.action_count, state_count, sigma_init).to(self.device)
-        self.target_network = NoisyDuelingDQN(self.action_count, state_count, sigma_init).to(self.device)
+        self.policy_network = DuelingDQN(self.action_count, state_count, self.use_noisy).to(self.device)
+        self.target_network = DuelingDQN(self.action_count, state_count, self.use_noisy).to(self.device)
         self.target_network.load_state_dict(self.policy_network.state_dict())
 
         # Create memory
@@ -48,17 +52,34 @@ class RainbowAgent:
             lr=self.wdb.get_hyperparameter("learning_rate_policy"),
         )
 
-    def get_action(self, state: np.ndarray) -> int:
+    def get_noisy_action(self, state: np.ndarray) -> int:
         """Selects action using NoisyNets"""
         self.policy_network.reset_noise()
         with torch.no_grad():
             state = torch.FloatTensor(state).unsqueeze(0).to(self.device)
             return self.policy_network(state).argmax(1).item()
 
+    def epsilon_greedy_action(self, state: np.ndarray) -> int:
+        """Selects action using Epsilon greedy method"""
+        rnd = np.random.random()
+        if rnd < self.epsilon:
+            return np.random.randint(0, self.action_count)
+
+        with torch.no_grad():
+            state = torch.FloatTensor(state).unsqueeze(0).to(self.device)
+            return self.policy_network(state).argmax(1).item()
+
+    def decay_epsilon(self):
+        """Slowly anneal epsilon to encourage more exploitation"""
+        self.epsilon = max(0.02, self.epsilon * self.epsilon_decay)
+
     def optimize(self) -> float:
         """Performs one optimization step for DQN + Double + Dueling + PER + NoisyNets, will later be adjusted"""
-        # Reset noise
-        self.policy_network.reset_noise()
+        # Perform exploration vs. exploitation step
+        if self.use_noisy:
+            self.policy_network.reset_noise()
+        else:
+            self.decay_epsilon()
 
         # Sample batch from memory
         batch_size = self.wdb.get_hyperparameter("batch_size")
@@ -127,7 +148,7 @@ class RainbowAgent:
                 total_steps += 1
 
                 # Get action from the model, advance the environment
-                action = self.get_action(state)
+                action = self.get_noisy_action(state) if self.use_noisy else self.epsilon_greedy_action(state)
                 next_state, reward, done, _ = self.env.step(action)
 
                 # Add to memory, adjust new state
@@ -197,7 +218,7 @@ class RainbowAgent:
         done = False
         self.epsilon = 0
         while not done:
-            action = self.get_action(state)
+            action = self.get_noisy_action(state) if self.use_noisy else self.epsilon_greedy_action(state)
             state, reward, done, _ = self.env.step(action)
             self.env.render()
 

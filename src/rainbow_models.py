@@ -83,21 +83,27 @@ class NoisyLinear(nn.Module):
         return F.linear(x, weight, bias)
 
 
-class NoisyDuelingDQN(nn.Module):
+class DuelingDQN(nn.Module):
     """Dueling Deep Q-Network for Rainbow Agent"""
 
-    def __init__(self, action_space_size: int, observation_space_size: int, sigma_init: float):
+    def __init__(self, action_space_size: int, observation_space_size: int, use_noisy: int):
         """Initialize network with given action and observation size"""
         super().__init__()
+        
+        # Switch for noisy vs. standard nets
+        linear = NoisyLinear if use_noisy else nn.Linear
+
+        # Shared fully connected part
         self.network = nn.Sequential(
-            NoisyLinear(observation_space_size, 128, sigma_init),
+            linear(observation_space_size, 128),
             nn.ReLU(),
-            NoisyLinear(128, 128, sigma_init),
+            linear(128, 128),
             nn.ReLU(),
         )
 
-        self.advantage_head = NoisyLinear(128, action_space_size, sigma_init)
-        self.value_head = NoisyLinear(128, 1, sigma_init)
+        # Value and advantage heads
+        self.advantage_head = linear(128, action_space_size)
+        self.value_head = linear(128, 1)
 
     def reset_noise(self):
         """Resets NoisyNets"""
@@ -116,13 +122,17 @@ class NoisyDuelingDQN(nn.Module):
         return q_values
 
 
-class NoisyDuelingConvDQN(nn.Module):
+class DuelingConvDQN(nn.Module):
     """Convolutional Dueling Deep Q-Network for Rainbow Agent"""
 
-    def __init__(self, action_space_size: int, observation_space_size: int, sigma_init: float):
+    def __init__(self, action_space_size: int, observation_space_size: int, use_noisy: int):
         """Initializes network with given action and observation size"""
         super().__init__()
-        # Convolutional part
+
+        # Switch for noisy vs. standard nets
+        linear = NoisyLinear if use_noisy else nn.Linear
+
+        # Shared convolutional part
         self.network = nn.Sequential(
             nn.Conv2d(observation_space_size, 32, kernel_size=8, stride=4),
             nn.ReLU(),
@@ -134,10 +144,10 @@ class NoisyDuelingConvDQN(nn.Module):
 
         # Value and Advantage heads
         self.advantage_head = nn.Sequential(
-            NoisyLinear(3136, 512, sigma_init), nn.ReLU(), NoisyLinear(512, action_space_size, sigma_init)
+            linear(3136, 512), nn.ReLU(), linear(512, action_space_size)
         )
         self.value_head = nn.Sequential(
-            NoisyLinear(3136, 512, sigma_init), nn.ReLU(), NoisyLinear(512, 1, sigma_init)
+            linear(3136, 512), nn.ReLU(), linear(512, 1)
         )
 
     def reset_noise(self):
