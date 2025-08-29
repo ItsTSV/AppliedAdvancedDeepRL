@@ -83,15 +83,25 @@ class NoisyLinear(nn.Module):
         return F.linear(x, weight, bias)
 
 
-class DuelingDQN(nn.Module):
+class DuelingQRDQN(nn.Module):
     """Dueling Deep Q-Network for Rainbow Agent"""
 
-    def __init__(self, action_space_size: int, observation_space_size: int, use_noisy: int):
+    def __init__(
+        self,
+        action_space_size: int,
+        observation_space_size: int,
+        use_noisy: int,
+        quantile_count: int,
+    ):
         """Initialize network with given action and observation size"""
         super().__init__()
-        
+
         # Switch for noisy vs. standard nets
         linear = NoisyLinear if use_noisy else nn.Linear
+
+        # QR-DQN
+        self.quantile_count = quantile_count
+        self.action_space_size = action_space_size
 
         # Shared fully connected part
         self.network = nn.Sequential(
@@ -102,8 +112,8 @@ class DuelingDQN(nn.Module):
         )
 
         # Value and advantage heads
-        self.advantage_head = linear(128, action_space_size)
-        self.value_head = linear(128, 1)
+        self.advantage_head = linear(128, action_space_size * self.quantile_count)
+        self.value_head = linear(128, self.quantile_count)
 
     def reset_noise(self):
         """Resets NoisyNets"""
@@ -114,23 +124,44 @@ class DuelingDQN(nn.Module):
                 layer.reset_noise()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Forward pass through the network."""
+        """Forward pass through the network.
+
+        Returns:
+            tensor: [Batch, Actions, Quantiles]
+        """
         x = self.network(x)
+
+        # Dueling
         values = self.value_head(x)
         advantages = self.advantage_head(x)
-        q_values = values + (advantages - advantages.mean(dim=1, keepdim=True))
+
+        # QR-DQN
+        advantages = advantages.view(-1, self.action_space_size, self.quantile_count)
+        q_values = values.unsqueeze(1) + (
+            advantages - advantages.mean(dim=1, keepdim=True)
+        )
         return q_values
 
 
 class DuelingConvDQN(nn.Module):
     """Convolutional Dueling Deep Q-Network for Rainbow Agent"""
 
-    def __init__(self, action_space_size: int, observation_space_size: int, use_noisy: int):
+    def __init__(
+        self,
+        action_space_size: int,
+        observation_space_size: int,
+        use_noisy: int,
+        quantile_count: int,
+    ):
         """Initializes network with given action and observation size"""
         super().__init__()
 
         # Switch for noisy vs. standard nets
         linear = NoisyLinear if use_noisy else nn.Linear
+
+        # QR-DQN
+        self.quantile_count = quantile_count
+        self.action_space_size = action_space_size
 
         # Shared convolutional part
         self.network = nn.Sequential(
@@ -146,9 +177,7 @@ class DuelingConvDQN(nn.Module):
         self.advantage_head = nn.Sequential(
             linear(3136, 512), nn.ReLU(), linear(512, action_space_size)
         )
-        self.value_head = nn.Sequential(
-            linear(3136, 512), nn.ReLU(), linear(512, 1)
-        )
+        self.value_head = nn.Sequential(linear(3136, 512), nn.ReLU(), linear(512, 1))
 
     def reset_noise(self):
         """Resets NoisyNets"""
@@ -161,10 +190,19 @@ class DuelingConvDQN(nn.Module):
                 layer.reset_noise()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Forward pass through the network."""
+        """Forward pass through the network.
+
+        Returns:
+            tensor: [Batch, Actions, Quantiles]
+        """
         x = self.network(x)
         x = x.view(x.size(0), -1)
+
+        # Dueling
         advantages = self.advantage_head(x)
         values = self.value_head(x)
+
+        # QR-DQN
+        advantages = advantages.view(-1, self.action_space_size, self.quantile_count)
         q_values = values + (advantages - advantages.mean(dim=1, keepdim=True))
         return q_values

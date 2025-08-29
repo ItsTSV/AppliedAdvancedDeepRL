@@ -28,14 +28,14 @@ Soft Actor Critic
 ---
 
 Rainbow DQN
-- [ ] Implemented
+- [x] Implemented
   - [x] DQN
   - [x] Double DQN
   - [x] Dueling DQN
   - [x] Prioritised Experience Replay
   - [x] Noisy Nets
   - [x] Multi-step learning
-  - [ ] Distributional RL (C51)
+  - [x] Distributional RL (QR-DQN)
 - [ ] Code level optimised
 - [x] Tested for implemented parts
 - [ ] Used in complex simulated environments

@@ -2,10 +2,9 @@ import numpy as np
 import torch
 from collections import deque
 import os
-import torch.nn.functional as F
 from environment_manager import EnvironmentManager
 from wandb_wrapper import WandbWrapper
-from rainbow_models import DuelingDQN
+from rainbow_models import DuelingQRDQN
 from rainbow_memory import PrioritizedExperienceReplay
 
 
@@ -29,10 +28,15 @@ class RainbowAgent:
         self.epsilon_decay = self.wdb.get_hyperparameter("epsilon_decay")
 
         # Models
+        self.quantile_count = self.wdb.get_hyperparameter("quantile_count")
         self.use_noisy = self.wdb.get_hyperparameter("use_noisy")
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.policy_network = DuelingDQN(self.action_count, state_count, self.use_noisy).to(self.device)
-        self.target_network = DuelingDQN(self.action_count, state_count, self.use_noisy).to(self.device)
+        self.policy_network = DuelingQRDQN(
+            self.action_count, state_count, self.use_noisy, self.quantile_count
+        ).to(self.device)
+        self.target_network = DuelingQRDQN(
+            self.action_count, state_count, self.use_noisy, self.quantile_count
+        ).to(self.device)
         self.target_network.load_state_dict(self.policy_network.state_dict())
 
         # Create memory
@@ -57,7 +61,7 @@ class RainbowAgent:
         self.policy_network.reset_noise()
         with torch.no_grad():
             state = torch.FloatTensor(state).unsqueeze(0).to(self.device)
-            return self.policy_network(state).argmax(1).item()
+            return self.policy_network(state).mean(2).argmax(1).item()
 
     def epsilon_greedy_action(self, state: np.ndarray) -> int:
         """Selects action using Epsilon greedy method"""
@@ -67,7 +71,7 @@ class RainbowAgent:
 
         with torch.no_grad():
             state = torch.FloatTensor(state).unsqueeze(0).to(self.device)
-            return self.policy_network(state).argmax(1).item()
+            return self.policy_network(state).mean(2).argmax(1).item()
 
     def decay_epsilon(self):
         """Slowly anneal epsilon to encourage more exploitation"""
@@ -88,35 +92,65 @@ class RainbowAgent:
         )
 
         # Get current Q-values
-        current_q_values = self.policy_network(states).gather(1, actions)
+        current_quantiles = self.policy_network(states).gather(
+            1, actions.unsqueeze(-1).expand(-1, -1, self.quantile_count)
+        )
 
         # Double DQN target with n-step gamma
+        # This is an expand-unsqueeze-something hell; basically, all the tensors that are used for calculations should
+        # be in shape [BATCH, 1, QUANTILES], so all the reshaping is done to ensure that.
         gamma = self.wdb.get_hyperparameter("gamma")
         n_step = self.wdb.get_hyperparameter("n_step")
         with torch.no_grad():
-            next_actions = self.policy_network(next_states).argmax(dim=1, keepdim=True)
-            next_q_values = self.target_network(next_states).gather(1, next_actions)
-            target_q_values = rewards + (1 - dones) * (gamma**n_step) * next_q_values
+            next_actions = (
+                self.policy_network(next_states).mean(2).argmax(1).unsqueeze(-1)
+            )
+            next_quantiles = self.target_network(next_states).gather(
+                1, next_actions.unsqueeze(-1).expand(-1, -1, self.quantile_count)
+            )
+            rewards_expanded = rewards.unsqueeze(-1).expand(-1, -1, self.quantile_count)
+            dones_expanded = dones.unsqueeze(-1).expand(-1, -1, self.quantile_count)
+            target_quantiles = (
+                rewards_expanded
+                + (1 - dones_expanded) * (gamma**n_step) * next_quantiles
+            )
 
-        # TD-errors
-        td_errors = target_q_values - current_q_values
+        # TD errors
+        td_errors = target_quantiles - current_quantiles.transpose(1, 2)
 
-        # Per-sample Smooth L1 loss
-        per_sample_loss = F.smooth_l1_loss(
-            current_q_values, target_q_values, reduction="none"
-        ).squeeze(1)
+        # Quantile Huber Loss
+        kappa = 1.0
+        tau_hat = (
+            (torch.arange(0, self.quantile_count, device=self.device).float() + 0.5)
+            / self.quantile_count
+        ).view(1, -1, 1)
+
+        huber_loss = torch.where(
+            td_errors.abs() <= kappa,
+            0.5 * td_errors.pow(2),
+            kappa * (td_errors.abs() - 0.5 * kappa),
+        )
+
+        # Quantile weights
+        quantile_weights = torch.abs(tau_hat - (td_errors.detach() < 0).float())
+
+        # Final loss
+        quantile_loss = quantile_weights * huber_loss
+        per_sample_loss = quantile_loss.sum(2).mean(1)
 
         # Weighted PER loss
-        loss = (weights.squeeze(1) * per_sample_loss).mean()
+        loss = (weights * per_sample_loss).mean()
 
         # Gradient step
         self.optimizer.zero_grad()
         loss.backward()
+        torch.nn.utils.clip_grad_norm_(self.policy_network.parameters(), max_norm=10.0)
         self.optimizer.step()
 
-        # Update priorities in memory
-        td_errors = td_errors.detach().abs().squeeze(1) + 1e-6
-        self.memory.update_priorities(indices, td_errors)
+        # Update priorities
+        td_errors_abs = td_errors.detach().abs().mean(dim=(1, 2))
+        priorities = td_errors_abs.cpu().numpy() + 1e-6
+        self.memory.update_priorities(indices, priorities)
 
         return loss.item()
 
@@ -148,7 +182,11 @@ class RainbowAgent:
                 total_steps += 1
 
                 # Get action from the model, advance the environment
-                action = self.get_noisy_action(state) if self.use_noisy else self.epsilon_greedy_action(state)
+                action = (
+                    self.get_noisy_action(state)
+                    if self.use_noisy
+                    else self.epsilon_greedy_action(state)
+                )
                 next_state, reward, done, _ = self.env.step(action)
 
                 # Add to memory, adjust new state
@@ -218,7 +256,11 @@ class RainbowAgent:
         done = False
         self.epsilon = 0
         while not done:
-            action = self.get_noisy_action(state) if self.use_noisy else self.epsilon_greedy_action(state)
+            action = (
+                self.get_noisy_action(state)
+                if self.use_noisy
+                else self.epsilon_greedy_action(state)
+            )
             state, reward, done, _ = self.env.step(action)
             self.env.render()
 

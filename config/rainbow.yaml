@@ -22,7 +22,7 @@ config:
   episode_steps: 500                        # How many steps before the episode is terminated?
   # Algorithm hyperparameters
   memory_size: 16384                        # How many steps can fit into the memory?
-  learning_rate_policy: 0.0005               # Learning rate for Q-Network
+  learning_rate_policy: 0.0005              # Learning rate for Q-Network
   gamma: 0.99                               # Discount factor
   epsilon_decay: 0.99                       # If noisy nets are not used, how much will the epsilon decay in a step?
   warmup_steps: 500                         # How many steps before agents starts optimising?
@@ -32,3 +32,5 @@ config:
   beta: 0.6                                 # Importance sampling negative exponent
   n_step: 3                                 # How many steps are used in multistep update?
   use_noisy: 0                              # Should noisy nets be used?
+  quantile_count: 21                        # How many quantiles will be used in QR-DQN?
+  kappa: 1.0                                # Huber loss
