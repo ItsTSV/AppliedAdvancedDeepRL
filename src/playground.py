@@ -24,7 +24,7 @@ model = ContinuousActorCriticNet(action_space, observation_space)
 agent = PPOAgentContinuous(env, wdb, model)
 
 # Load model
-agent.load_model("../models/ppo_swimmer_tanh.pth")
+agent.load_model("../models/ppo_swimmer.pth")
 
 # Play
 agent.play()

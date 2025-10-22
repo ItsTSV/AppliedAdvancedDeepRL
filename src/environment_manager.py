@@ -24,12 +24,10 @@ class EnvironmentManager:
         """Wraps itself in wrappers that are used for environments with continuous action space.
 
         Clip actions -- normalises the input action to [-1, 1] range.
-        Normalize Observations -- normalises the observation space to have 0 mean and unit variance.
         Transform Observation -- applies function to observations (clipping them in [-10, 10]).
         Transform Reward -- applies function to rewards (clipping them in [-10, 10]).
         """
         self.env = wrappers.ClipAction(self.env)
-        self.env = wrappers.NormalizeObservation(self.env)
         self.env = wrappers.TransformObservation(
             self.env,
             lambda observation: np.clip(observation, -10, 10),
