@@ -100,7 +100,7 @@ class PrioritizedExperienceReplay:
         reward: float,
         next_state: np.ndarray,
         done: bool,
-    ) -> tuple[bool, tuple]:
+    ) -> tuple:
         """Adds transition to n-step cache, processes it.
 
         Returns:

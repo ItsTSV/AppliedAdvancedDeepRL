@@ -36,8 +36,8 @@ class RolloutBuffer:
 
     def add(
         self,
-        state: np.array,
-        action: np.array,
+        state: np.ndarray,
+        action: np.ndarray,
         logprob: float,
         reward: float,
         value: float,
@@ -58,7 +58,7 @@ class RolloutBuffer:
         )
         return (
             torch.from_numpy(np.array(states, dtype=np.float32)).to(self.device),
-            torch.tensor(actions, dtype=torch.long, device=self.device),
+            torch.from_numpy(np.array(actions, dtype=np.float32)).to(self.device),
             torch.tensor(logprobs, dtype=torch.float32, device=self.device),
             torch.tensor(rewards, dtype=torch.float32, device=self.device),
             torch.tensor(values, dtype=torch.float32, device=self.device),

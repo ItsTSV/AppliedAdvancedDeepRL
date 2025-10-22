@@ -85,7 +85,7 @@ class SACAgent:
 
             return action, log_prob
 
-    def optimize_q_networks(self) -> tuple[float, float, float]:
+    def optimize_q_networks(self) -> tuple:
         """Optimizes Q-policy networks using data from memory
 
         Returns:

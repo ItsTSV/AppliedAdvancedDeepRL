@@ -39,7 +39,7 @@ class ActorNet(nn.Module):
         self.mean_head = nn.Linear(256, action_space_size)
         self.log_std_head = nn.Linear(256, action_space_size)
 
-    def forward(self, x: torch.tensor) -> tuple[torch.tensor, torch.tensor]:
+    def forward(self, x: torch.tensor) -> tuple:
         """Forwards pass through the network.
 
          Args:

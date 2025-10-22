@@ -53,11 +53,9 @@ class PPOAgentContinuous(PPOAgentBase):
             distribution = Normal(mean, action_std)
             action = distribution.sample()
             log_prob = distribution.log_prob(action).sum(dim=-1)
-            action_item = action.item()
-            if isinstance(action_item, float):
-                action_item = [action_item]
+            action = action.cpu().numpy()
 
-        return action_item, log_prob.item(), value.item()
+        return action, log_prob.item(), value.item()
 
     def evaluate_actions(
         self, batch_states: torch.tensor, batch_actions: torch.tensor

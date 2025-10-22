@@ -82,7 +82,7 @@ class PPOAgentBase(ABC):
         while True:
             state = self.env.reset()
 
-            for _ in range(self.wdb.get_hyperparameter("episode_steps")):
+            for step in range(self.wdb.get_hyperparameter("episode_steps")):
                 # Update steps
                 total_steps += 1
 
@@ -111,7 +111,7 @@ class PPOAgentBase(ABC):
                     )
 
                 # If the episode is done, break the loop and optionally print for sanity check
-                if done:
+                if done or step == self.wdb.get_hyperparameter("episode_steps") - 1:
                     # Update episode & steps info
                     episode_steps, episode_reward = self.env.get_episode_info()
                     episode += 1

@@ -8,26 +8,26 @@ from sac_agent import SACAgent
 from rainbow_agent import RainbowAgent
 
 # Initialize WandbWrapper
-wdb = WandbWrapper("../config/rainbow.yaml")
+#wdb = WandbWrapper("../config/rainbow.yaml")
 #wdb = WandbWrapper("../config/sac.yaml")
 #wdb = WandbWrapper("../config/ppo_discrete.yaml")
-#wdb = WandbWrapper("../config/ppo_continuous.yaml")
+wdb = WandbWrapper("../config/ppo_continuous.yaml")
 
 # Initialize environment
 name = wdb.get_hyperparameter("environment")
 env = EnvironmentManager(name, "rgb_array")
-#env.build_continuous()
+env.build_continuous()
 
 # Initialize network
-#action_space, observation_space = env.get_dimensions()
+action_space, observation_space = env.get_dimensions()
 #model = DiscreteActorCriticNet(action_space, observation_space)
-#model = ContinuousActorCriticNet(action_space, observation_space)
+model = ContinuousActorCriticNet(action_space, observation_space)
 
 # Initialize PPO agent
 #agent = PPOAgentDiscrete(env, wdb, model)
-#agent = PPOAgentContinuous(env, wdb, model)
+agent = PPOAgentContinuous(env, wdb, model)
 #agent = SACAgent(env, wdb)
-agent = RainbowAgent(env, wdb)
+#agent = RainbowAgent(env, wdb)
 
 # Start training
 agent.train()
