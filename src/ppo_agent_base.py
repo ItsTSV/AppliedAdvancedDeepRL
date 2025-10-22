@@ -78,6 +78,8 @@ class PPOAgentBase(ABC):
         best_mean = float("-inf")
         save_interval = self.wdb.get_hyperparameter("save_interval")
         reward_buffer = deque(maxlen=save_interval)
+        policy_loss_buffer = deque(maxlen=5)
+        value_loss_buffer = deque(maxlen=5)
 
         while True:
             state = self.env.reset()
@@ -101,12 +103,14 @@ class PPOAgentBase(ABC):
                 # If the rollout length is achieved, optimise
                 if rollout_size == self.wdb.get_hyperparameter("rollout_length"):
                     value_loss, policy_loss = self.optimize_model(state)
+                    value_loss_buffer.append(value_loss)
+                    policy_loss_buffer.append(policy_loss)
                     self.memory.clear()
                     self.wdb.log(
                         {
                             "Total Steps": total_steps,
-                            "Value Loss": value_loss,
-                            "Policy Loss": policy_loss,
+                            "Value Loss": np.mean(value_loss_buffer),
+                            "Policy Loss": np.mean(policy_loss_buffer),
                         }
                     )
 

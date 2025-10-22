@@ -52,6 +52,18 @@ class EnvironmentManager:
         )
         self.env = wrappers.FrameStackObservation(self.env, 4)
 
+    def build_video_recorder(self, video_folder: str = "outputs/"):
+        """Wraps itself in a video recorder wrapper.
+
+        Args:
+            video_folder (str): Folder where videos will be saved.
+        """
+        self.env = wrappers.RecordVideo(
+            self.env,
+            video_folder,
+            episode_trigger=lambda episode_id: True,
+        )
+
     def get_dimensions(self) -> tuple:
         """Returns state and observation space dimension"""
         return (

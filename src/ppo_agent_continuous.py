@@ -114,7 +114,7 @@ class PPOAgentContinuous(PPOAgentBase):
                 batch_actions = actions[batch_indices]
                 batch_log_probs = log_probs[batch_indices]
                 batch_returns = returns[batch_indices]
-                batch_advantages = advantages[batch_indices]
+                batch_advantages = advantages[batch_indices].detach()
 
                 # Input states to the model, get logits and values according to current policy
                 _, new_log_probs, values_pred, entropy = self.evaluate_actions(
@@ -156,6 +156,10 @@ class PPOAgentContinuous(PPOAgentBase):
                 # Backpropagation
                 self.optimizer.zero_grad()
                 loss.backward()
+                torch.nn.utils.clip_grad_norm_(
+                    self.model.parameters(),
+                    self.wdb.get_hyperparameter("max_grad_norm"),
+                )
                 self.optimizer.step()
 
         return total_policy_loss / update_count, total_value_loss / update_count

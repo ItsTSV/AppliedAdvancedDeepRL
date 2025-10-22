@@ -14,11 +14,11 @@ class DiscreteActorCriticNet(nn.Module):
         super().__init__()
         self.network = nn.Sequential(
             nn.Linear(state_space_size, 64),
-            nn.ReLU(),
+            nn.Tanh(),
             nn.Linear(64, 64),
-            nn.ReLU(),
+            nn.Tanh(),
             nn.Linear(64, 64),
-            nn.ReLU(),
+            nn.Tanh(),
         )
         self.actor_head = nn.Linear(64, action_space_size)
         self.critic_head = nn.Linear(64, 1)
@@ -47,11 +47,11 @@ class ContinuousActorCriticNet(nn.Module):
         super().__init__()
         self.actor = nn.Sequential(
             nn.Linear(state_space_size, 64),
-            nn.ReLU(),
+            nn.Tanh(),
             nn.Linear(64, 64),
-            nn.ReLU(),
+            nn.Tanh(),
             nn.Linear(64, 64),
-            nn.ReLU(),
+            nn.Tanh(),
             nn.Linear(64, action_space_size),
         )
 
@@ -59,11 +59,11 @@ class ContinuousActorCriticNet(nn.Module):
 
         self.critic = nn.Sequential(
             nn.Linear(state_space_size, 64),
-            nn.ReLU(),
+            nn.Tanh(),
             nn.Linear(64, 64),
-            nn.ReLU(),
+            nn.Tanh(),
             nn.Linear(64, 64),
-            nn.ReLU(),
+            nn.Tanh(),
             nn.Linear(64, 1),
         )
 
