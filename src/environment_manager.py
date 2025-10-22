@@ -50,12 +50,14 @@ class EnvironmentManager:
         )
         self.env = wrappers.FrameStackObservation(self.env, 4)
 
-    def build_video_recorder(self, video_folder: str = "outputs/"):
+    def build_video_recorder(self, video_folder: str = "../outputs/", fps: int = 120):
         """Wraps itself in a video recorder wrapper.
 
         Args:
             video_folder (str): Folder where videos will be saved.
+            fps (int): Frames per second for the recorded video.
         """
+        self.env.metadata["render_fps"] = fps
         self.env = wrappers.RecordVideo(
             self.env,
             video_folder,

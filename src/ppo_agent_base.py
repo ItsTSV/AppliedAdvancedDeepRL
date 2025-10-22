@@ -171,7 +171,6 @@ class PPOAgentBase(ABC):
 
         steps, reward = self.env.get_episode_info()
         print(f"Test run finished in {steps} steps with {reward} reward!")
-        self.env.close()
 
     def save_model(self):
         """INFERENCE ONLY -- Saves state dict of the model"""
