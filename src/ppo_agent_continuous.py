@@ -81,7 +81,7 @@ class PPOAgentContinuous(PPOAgentBase):
         # Compute next value from final state
         # Make sure to estimate 0 if the episode is terminated
         with torch.no_grad():
-            if dones[-1]:
+            if dones[-1].item():
                 next_value = torch.tensor([0.0], dtype=torch.float32).to(self.device)
             else:
                 _, _, next_value = self.model(
