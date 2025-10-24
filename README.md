@@ -10,7 +10,7 @@ domain; though there might be some other simulated environments as well, if ther
 
 ### Environments to solve:
 - [ ] MuJoCo
-  -  [x] Swimmer-v5
+  -  [x] Swimmer-v5 &rarr 500k steps; average reward of 108
 - [ ] Gymnasium-Robotics
 
 ### Trained models:
@@ -34,3 +34,5 @@ Run linter: ```pylint src```
 
 ### Random gifs
 ... because looking at images is more interesting than reading text.
+
+![Swimmer-v5 trained with PPO](outputs/swimmer.gif)
