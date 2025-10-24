@@ -19,15 +19,19 @@ class EnvironmentManager:
         self.env = gym.make(name, render_mode=render_mode)
         self.episode_steps = 0
         self.episode_reward = 0
+        self.norm_wrapper = None
 
     def build_continuous(self):
         """Wraps itself in wrappers that are used for environments with continuous action space.
 
         Clip actions -- normalises the input action to [-1, 1] range.
+        Normalize Observation -- normalises observations to have mean 0 and variance 1.
         Transform Observation -- applies function to observations (clipping them in [-10, 10]).
         Transform Reward -- applies function to rewards (clipping them in [-10, 10]).
         """
         self.env = wrappers.ClipAction(self.env)
+        self.env = wrappers.NormalizeObservation(self.env)
+        self.norm_wrapper = self.env
         self.env = wrappers.TransformObservation(
             self.env,
             lambda observation: np.clip(observation, -10, 10),
@@ -63,6 +67,36 @@ class EnvironmentManager:
             video_folder,
             episode_trigger=lambda episode_id: True,
         )
+
+    def save_normalization_parameters(self, path):
+        """Saves the observation normalization mean and variance to a file.
+
+        Args:
+            path (str): The file path where the normalization parameters will be saved.
+        """
+        if self.norm_wrapper is None:
+            raise ValueError(
+                "Normalization wrapper not found. Ensure build_continuous() has been called."
+            )
+        rms = self.norm_wrapper.obs_rms
+        np.savez(path, mean=rms.mean, var=rms.var, count=rms.count)
+
+    def load_normalization_parameters(self, path):
+        """Loads the observation normalization mean and variance from a file.
+
+        Args:
+            path (str): The file path from which the normalization parameters will be loaded.
+        """
+        if self.norm_wrapper is None:
+            raise ValueError(
+                "Normalization wrapper not found. Ensure build_continuous() has been called."
+            )
+        print("Loaded!")
+        data = np.load(path)
+        rms = self.norm_wrapper.obs_rms
+        rms.mean = data["mean"]
+        rms.var = data["var"]
+        rms.count = data["count"]
 
     def get_dimensions(self) -> tuple:
         """Returns state and observation space dimension"""

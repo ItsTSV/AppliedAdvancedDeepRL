@@ -14,8 +14,8 @@ domain; though there might be some other simulated environments as well, if ther
 - [ ] Gymnasium-Robotics
 
 ### Trained models:
-I already trained some models. Storing them in GitHub repository ain't exactly a good idea, so they are stored on
-Hugging Face instead. You can find them [here](https://huggingface.co/collections/ItsTSV/reinforcement-learning-in-robotic-and-simulated-environments).
+I already trained some models. Storing them in GitHub repository ain't exactly a good idea; I will temporarily do it, but 
+later on, models will be stored on Hugging Face instead. You can find them [here](https://huggingface.co/collections/ItsTSV/reinforcement-learning-in-robotic-and-simulated-environments).
 
 ### Training logs and videos:
 Training logs and videos will be stored on Weights & Biases, later on Streamlit presentation page. For now, they remain

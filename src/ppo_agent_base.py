@@ -181,6 +181,7 @@ class PPOAgentBase(ABC):
 
         save_path = path + name + ".pth"
         torch.save(self.model.state_dict(), save_path)
+        self.env.save_normalization_parameters(path + name + "_rms.npz")
 
     def save_artifact(self):
         """INFERENCE ONLY -- Saves state dict to wandb"""
@@ -191,6 +192,7 @@ class PPOAgentBase(ABC):
 
         save_path = path + name + ".pth"
         self.wdb.log_model(name, save_path)
+        self.wdb.log_model(name + "_rms", path + name + "_rms.npz")
 
     def load_model(self, path):
         """INFERENCE ONLY -- Loads state dict of the model"""
@@ -199,3 +201,4 @@ class PPOAgentBase(ABC):
 
         self.model.load_state_dict(torch.load(path, weights_only=True))
         self.model.eval()
+        self.env.load_normalization_parameters(path.replace(".pth", "_rms.npz"))

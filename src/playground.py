@@ -13,9 +13,8 @@ wdb = WandbWrapper("../config/ppo_continuous_testing.yaml")
 
 # Initialize environment
 name = wdb.get_hyperparameter("environment")
-env = EnvironmentManager(name, "rgb_array")
+env = EnvironmentManager(name, "human")
 env.build_continuous()
-env.build_video_recorder()
 
 # Initialize network
 action_space, observation_space = env.get_dimensions()
