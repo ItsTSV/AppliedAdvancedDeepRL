@@ -10,7 +10,7 @@ domain; though there might be some other simulated environments as well, if ther
 
 ### Environments to solve:
 - [ ] MuJoCo
-  -  [x] Swimmer-v5 &rarr 500k steps; average reward of 108
+  -  [x] Swimmer-v5 → 500k steps; average reward of 108
 - [ ] Gymnasium-Robotics
 
 ### Trained models:
