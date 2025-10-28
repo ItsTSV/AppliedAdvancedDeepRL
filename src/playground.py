@@ -17,14 +17,15 @@ env = EnvironmentManager(name, "human")
 env.build_continuous()
 
 # Initialize network
+network_size = wdb.get_hyperparameter("network_size")
 action_space, observation_space = env.get_dimensions()
-model = ContinuousActorCriticNet(action_space, observation_space)
+model = ContinuousActorCriticNet(action_space, observation_space, network_size)
 
 # Initialize PPO agent
 agent = PPOAgentContinuous(env, wdb, model)
 
 # Load model
-agent.load_model("../models/ppo_swimmer.pth")
+agent.load_model("../models/ppo_hopper.pth")
 
 # Play
 agent.play()

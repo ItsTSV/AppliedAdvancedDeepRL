@@ -10,18 +10,18 @@ class DiscreteActorCriticNet(nn.Module):
     where convolutional layers will be needed.
     """
 
-    def __init__(self, action_space_size: int, state_space_size: int):
+    def __init__(self, action_space_size: int, state_space_size: int, network_size: int):
         super().__init__()
         self.network = nn.Sequential(
-            nn.Linear(state_space_size, 64),
+            nn.Linear(state_space_size, network_size),
             nn.Tanh(),
-            nn.Linear(64, 64),
+            nn.Linear(network_size, network_size),
             nn.Tanh(),
-            nn.Linear(64, 64),
+            nn.Linear(network_size, network_size),
             nn.Tanh(),
         )
-        self.actor_head = nn.Linear(64, action_space_size)
-        self.critic_head = nn.Linear(64, 1)
+        self.actor_head = nn.Linear(network_size, action_space_size)
+        self.critic_head = nn.Linear(network_size, 1)
 
     def forward(self, x: torch.tensor) -> tuple:
         """Forward pass through the network.
@@ -43,28 +43,28 @@ class ContinuousActorCriticNet(nn.Module):
     parameters, but allows agent to train more efficiently.
     """
 
-    def __init__(self, action_space_size: int, state_space_size: int):
+    def __init__(self, action_space_size: int, state_space_size: int, network_size: int):
         super().__init__()
         self.actor = nn.Sequential(
-            nn.Linear(state_space_size, 64),
+            nn.Linear(state_space_size, network_size),
             nn.Tanh(),
-            nn.Linear(64, 64),
+            nn.Linear(network_size, network_size),
             nn.Tanh(),
-            nn.Linear(64, 64),
+            nn.Linear(network_size, network_size),
             nn.Tanh(),
-            nn.Linear(64, action_space_size),
+            nn.Linear(network_size, action_space_size),
         )
 
         self.actor_log_st = nn.Parameter(torch.zeros(action_space_size))
 
         self.critic = nn.Sequential(
-            nn.Linear(state_space_size, 64),
+            nn.Linear(state_space_size, network_size),
             nn.Tanh(),
-            nn.Linear(64, 64),
+            nn.Linear(network_size, network_size),
             nn.Tanh(),
-            nn.Linear(64, 64),
+            nn.Linear(network_size, network_size),
             nn.Tanh(),
-            nn.Linear(64, 1),
+            nn.Linear(network_size, 1),
         )
 
     def forward(self, x: torch.tensor) -> tuple:

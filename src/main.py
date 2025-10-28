@@ -11,7 +11,7 @@ from rainbow_agent import RainbowAgent
 #wdb = WandbWrapper("../config/rainbow.yaml")
 #wdb = WandbWrapper("../config/sac.yaml")
 #wdb = WandbWrapper("../config/ppo_discrete.yaml")
-wdb = WandbWrapper("../config/ppo_continuous.yaml")
+wdb = WandbWrapper("../config/ppo_hopper.yaml")
 
 # Initialize environment
 name = wdb.get_hyperparameter("environment")
@@ -19,9 +19,10 @@ env = EnvironmentManager(name, "rgb_array")
 env.build_continuous()
 
 # Initialize network
+network_size = wdb.get_hyperparameter("network_size")
 action_space, observation_space = env.get_dimensions()
-#model = DiscreteActorCriticNet(action_space, observation_space)
-model = ContinuousActorCriticNet(action_space, observation_space)
+#model = DiscreteActorCriticNet(action_space, observation_space, network_size)
+model = ContinuousActorCriticNet(action_space, observation_space, network_size)
 
 # Initialize PPO agent
 #agent = PPOAgentDiscrete(env, wdb, model)
