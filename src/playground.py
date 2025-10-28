@@ -13,8 +13,9 @@ wdb = WandbWrapper("../config/ppo_continuous_testing.yaml")
 
 # Initialize environment
 name = wdb.get_hyperparameter("environment")
-env = EnvironmentManager(name, "human")
+env = EnvironmentManager(name, "rgb_array")
 env.build_continuous()
+env.build_video_recorder()
 
 # Initialize network
 network_size = wdb.get_hyperparameter("network_size")
@@ -28,7 +29,17 @@ agent = PPOAgentContinuous(env, wdb, model)
 agent.load_model("../models/ppo_hopper.pth")
 
 # Play
-agent.play()
+'''
+total_reward = 0
+for i in range(10):
+    reward = agent.play()
+    total_reward += reward
+    print(f"Episode {i+1}: Reward = {reward}")
+
+print(f"Average Reward over 10 episodes: {total_reward / 10}")
+'''
+reward = agent.play()
+print(f"Reward: {reward}")
 
 # Finish stuff
 env.close()

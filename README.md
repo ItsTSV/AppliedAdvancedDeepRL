@@ -35,4 +35,6 @@ Run linter: ```pylint src```
 ### Random gifs
 ... because looking at images is more interesting than reading text.
 
+![Hopper-v5 trained with PPO](outputs/hopper.gif)
+
 ![Swimmer-v5 trained with PPO](outputs/swimmer.gif)
