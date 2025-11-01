@@ -26,7 +26,7 @@ class PPOAgentBase(ABC):
         self.memory = RolloutBuffer()
 
     @abstractmethod
-    def get_action(self, state: np.ndarray) -> tuple:
+    def get_action(self, state: np.ndarray, deterministic: bool = False) -> tuple:
         """Selects an action based on the current state using the model."""
         pass
 
@@ -165,7 +165,7 @@ class PPOAgentBase(ABC):
         state = self.env.reset()
         done = False
         while not done:
-            action, _, _ = self.get_action(state)
+            action, _, _ = self.get_action(state, deterministic=True)
             state, reward, done, _ = self.env.step(action)
             self.env.render()
 

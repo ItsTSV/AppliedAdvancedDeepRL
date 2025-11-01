@@ -37,11 +37,12 @@ class PPOAgentContinuous(PPOAgentBase):
             eps=1e-5,
         )
 
-    def get_action(self, state: np.ndarray) -> tuple:
+    def get_action(self, state: np.ndarray, deterministic: bool = False) -> tuple:
         """Selects an action based on the current state using the model.
 
         Args:
             state (np.ndarray): The current state of the environment.
+            deterministic (bool): Whether to select the action deterministically.
 
         Returns:
             tuple: A tuple containing the selected action, its log probability and value estimate.
@@ -51,7 +52,12 @@ class PPOAgentContinuous(PPOAgentBase):
             mean, log_std, value = self.model(state_tensor)
             action_std = torch.exp(log_std)
             distribution = Normal(mean, action_std)
-            action = distribution.sample()
+
+            if deterministic:
+                action = mean
+            else:
+                action = distribution.sample()
+
             log_prob = distribution.log_prob(action).sum(dim=-1)
             action = action.cpu().numpy()
 
