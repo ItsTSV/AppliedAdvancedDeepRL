@@ -9,7 +9,7 @@ from ppo_agent_continuous import PPOAgentContinuous
 from ppo_models import ContinuousActorCriticNet
 
 # Initialize WandbWrapper
-wdb = WandbWrapper("../config/ppo_continuous_testing.yaml")
+wdb = WandbWrapper("../config/ppo_hopper.yaml", mode="disabled")
 
 # Initialize environment
 name = wdb.get_hyperparameter("environment")

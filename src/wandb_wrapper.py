@@ -11,11 +11,13 @@ class WandbWrapper:
         run (wandb.Run): object that handles computations and logging
     """
 
-    def __init__(self, yaml_path: str):
+    def __init__(self, yaml_path: str, mode="online"):
         """Initializes the instance with given configuration
 
         Args:
             yaml_path (str): location of the configuration file
+            mode (str, optional): "online" for dashboard logging, "offline" for local only (no need to have account),
+                                  "disabled" for no logging
         """
         yaml = OmegaConf.load(yaml_path)
         self.wandb_parameters = OmegaConf.to_container(yaml, resolve=True)
@@ -25,7 +27,8 @@ class WandbWrapper:
         self.run = wandb.init(
             **self.wandb_parameters,
             config=self.hyperparameters,
-            settings=wandb.Settings(quiet=True)
+            settings=wandb.Settings(quiet=True),
+            mode=mode
         )
         self.run.define_metric("*", step_metric="Total Steps")
 

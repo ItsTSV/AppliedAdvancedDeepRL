@@ -9,7 +9,6 @@ project: "Hopper-v5"
 name: "PPO"
 dir: "../logs"
 notes: "Training Hopper-v5 using PPO"
-mode: "online"
 monitor_gym: "False"
 config:
   # Environment, logging and saving control

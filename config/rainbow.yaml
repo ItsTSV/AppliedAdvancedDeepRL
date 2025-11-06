@@ -9,7 +9,6 @@ project: "RL CartPole"
 name: "Rainbow Epsilon Greedy"
 dir: "../logs"
 notes: "Testing algorithm functionality, logging and model saving -- Rainbow (DQN, Double, Dueling, PER, N-step, NoisyNets)."
-mode: "online"
 monitor_gym: "False"
 config:
   # Environment, logging and saving control

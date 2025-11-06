@@ -9,7 +9,6 @@ project: "RL CartPole"
 name: "PPO Discrete"
 dir: "../logs"
 notes: "Testing algorithm functionality, logging and model saving -- discrete PPO."
-mode: "online"
 monitor_gym: "False"
 config:
   # Environment, logging and saving control

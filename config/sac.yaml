@@ -9,7 +9,6 @@ project: "RL MountainCar"
 name: "SAC"
 dir: "../logs"
 notes: "Testing algorithm functionality, logging and model saving -- SAC."
-mode: "online"
 monitor_gym: "False"
 config:
   # Environment, logging and saving control
