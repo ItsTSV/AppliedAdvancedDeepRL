@@ -11,7 +11,7 @@ from rainbow_agent import RainbowAgent
 #wdb = WandbWrapper("../config/rainbow.yaml")
 #wdb = WandbWrapper("../config/sac.yaml")
 #wdb = WandbWrapper("../config/ppo_discrete.yaml")
-wdb = WandbWrapper("../config/ppo_hopper.yaml")
+wdb = WandbWrapper("../config/ppo_half_cheetah.yaml")
 
 # Initialize environment
 name = wdb.get_hyperparameter("environment")

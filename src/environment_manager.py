@@ -26,20 +26,10 @@ class EnvironmentManager:
 
         Clip actions -- normalises the input action to [-1, 1] range.
         Normalize Observation -- normalises observations to have mean 0 and variance 1.
-        Transform Observation -- applies function to observations (clipping them in [-10, 10]).
-        Transform Reward -- applies function to rewards (clipping them in [-10, 10]).
         """
         self.env = wrappers.ClipAction(self.env)
         self.env = wrappers.NormalizeObservation(self.env)
         self.norm_wrapper = self.env
-        self.env = wrappers.TransformObservation(
-            self.env,
-            lambda observation: np.clip(observation, -10, 10),
-            self.env.observation_space,
-        )
-        self.env = wrappers.TransformReward(
-            self.env, lambda reward: np.clip(reward, -10, 10)
-        )
 
     def build_convolutional(self):
         """Wraps itself in wrappers that are used for environments with continuous state space.

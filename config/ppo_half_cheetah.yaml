@@ -22,7 +22,7 @@ config:
   # Algorithm hyperparameters
   gamma: 0.98                               # Discount factor for future rewards
   lambda: 0.92                              # GAE tradeoff parameter
-  ppo_epochs: 16                            # How many epochs to train on each batch?
+  ppo_epochs: 20                            # How many epochs to train on each batch?
   rollout_length: 512                       # How many steps to collect before updating?
   batch_size: 64                            # How many steps are in each batch?
   clip_epsilon: 0.1                         # How much is the policy clipped?

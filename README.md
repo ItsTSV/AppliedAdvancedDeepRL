@@ -10,7 +10,9 @@ domain; though there might be some other simulated environments as well, if ther
 
 ### Environments to solve:
 - [ ] MuJoCo
-  -  [x] Swimmer-v5 → 500k steps; average reward of 108
+  - [x] Swimmer-v5
+  - [x] Hopper-v5  
+  - [x] HalfCheetah-v5
 - [ ] Gymnasium-Robotics
 
 ### Trained models:
@@ -38,3 +40,5 @@ Run linter: ```pylint src```
 ![Hopper-v5 trained with PPO](outputs/hopper.gif)
 
 ![Swimmer-v5 trained with PPO](outputs/swimmer.gif)
+
+![HalfCheetah-v5 trained with PPO](outputs/half_cheetah.gif)
