@@ -1,4 +1,6 @@
-import numpy as np
+import glob
+import os
+import pandas as pd
 from textual.app import App, ComposeResult
 from textual.widgets import (
     Header,
@@ -12,7 +14,7 @@ from textual.widgets import (
     RichLog
 )
 from textual.validation import Regex
-import glob
+from data_lab import generate_distribution_plot, generate_scatter_plot
 from wandb_wrapper import WandbWrapper
 from environment_manager import EnvironmentManager
 from ppo_agent_continuous import PPOAgentContinuous
@@ -96,11 +98,11 @@ class RlPlayground(App):
     def on_radio_set_changed(self, event: RadioSet.Changed) -> None:
         """Handle radio set change events to log selections"""
         if event.radio_set.id == "config_selector":
-            self.config_path = str(event.pressed.label)
+            self.config_path = os.path.normpath(str(event.pressed.label))
         elif event.radio_set.id == "model_selector":
-            self.model_path = str(event.pressed.label)
+            self.model_path = os.path.normpath(str(event.pressed.label))
         elif event.radio_set.id == "render_selector":
-            self.render_mode = str(event.pressed.label)
+            self.render_mode = os.path.normpath(str(event.pressed.label))
 
     def on_checkbox_changed(self, event: Checkbox.Changed) -> None:
         """Handle checkbox change events to log additional settings"""
@@ -118,24 +120,16 @@ class RlPlayground(App):
     def run_trials(self):
         """Run the specified number of trials with the selected configuration"""
         # Clear debug output
-        debug_output = self.query_one(RichLog)
-        debug_output.clear()
+        self.call_later(self.clear_log)
 
         # Validate selections
         if not all([self.config_path, self.model_path, self.render_mode]):
-            debug_output.write("[bold red]Error:[/bold red] Please make all selections before running trials.")
+            self.call_later(self.log_message,
+                            "[bold red]Error:[/bold red] Please make all selections before running trials.")
             return
 
-        # Write info
-        debug_output = self.query_one(RichLog)
-        debug_output.clear()
-        debug_output.write(f"[bold green]Configuration File:[/bold green] {self.config_path}")
-        debug_output.write(f"[bold green]Model File:[/bold green] {self.model_path}")
-        debug_output.write(f"[bold green]Render Mode:[/bold green] {self.render_mode}")
-        debug_output.write(f"[bold green]Number of Trials:[/bold green] {self.num_trials}")
-        debug_output.write(f"[bold green]Generate CSV Log:[/bold green] {self.generate_csv_log}")
-        debug_output.write(f"[bold green]Generate Chart Report:[/bold green] {self.generate_chart_report}")
-        debug_output.write("[bold blue]Running trials...[/bold blue]")
+        # Write summary
+        self.call_later(self.log_summary)
 
         # Initialize WandbWrapper
         wdb = WandbWrapper(self.config_path, mode="disabled")
@@ -164,28 +158,62 @@ class RlPlayground(App):
             try:
                 agent.load_model(self.model_path)
             except:
-                debug_output.write(f"[bold red]Make sure the model is compactible with selected agent![/bold red]")
+                self.call_later(self.log_message,
+                                "[bold red]Make sure the model is compactible with selected agent![/bold red]")
+
+        # Log stuff
+        df = pd.DataFrame({
+            "Trial": [],
+            "Reward": [],
+            "Steps": []
+        })
 
         # Run trials
-        rewards = []
         for i in range(self.num_trials):
-            reward = agent.play()
-            rewards.append(reward)
-            debug_output = self.query_one(RichLog)
-            debug_output.write(f"[bold yellow]Trial {i + 1} Reward:[/bold yellow] {reward}")
+            reward, steps = agent.play()
+            df.loc[len(df)] = [i, reward, steps]
+            self.call_later(self.log_message, f"[bold yellow]Trial {i + 1} Reward:[/bold yellow] {reward}")
 
-        average_reward = np.sum(rewards) / self.num_trials
-        debug_output = self.query_one(RichLog)
-        debug_output.write(f"[bold magenta]Average Reward:[/bold magenta] {average_reward}")
+        average_reward = df["Reward"].mean()
+        self.call_later(self.log_message, f"[bold magenta]Average Reward:[/bold magenta] {average_reward}")
 
-        # Will be added later: CSV and Chart export
+        # Generate charts / save to csv
+        tmp_name = self.model_path.split(os.sep)[-1]
+        if self.generate_chart_report:
+            self.call_later(generate_distribution_plot, df, tmp_name)
+            self.call_later(generate_scatter_plot, df, tmp_name)
+
+        if self.generate_csv_log:
+            df.to_csv(f"../outputs/{tmp_name}_run.csv")
 
         # Finish writeup
-        debug_output.write(f"[bold blue]Trials finished[/bold blue]")
+        self.call_later(self.log_message, "[bold blue]Trials finished[/bold blue]")
 
         # Clean
         env.close()
         wdb.finish()
+
+    def log_summary(self):
+        """Thread-safe method for writing trial summary"""
+        debug_output = self.query_one(RichLog)
+        debug_output.clear()
+        debug_output.write(f"[bold green]Configuration File:[/bold green] {self.config_path}")
+        debug_output.write(f"[bold green]Model File:[/bold green] {self.model_path}")
+        debug_output.write(f"[bold green]Render Mode:[/bold green] {self.render_mode}")
+        debug_output.write(f"[bold green]Number of Trials:[/bold green] {self.num_trials}")
+        debug_output.write(f"[bold green]Generate CSV Log:[/bold green] {self.generate_csv_log}")
+        debug_output.write(f"[bold green]Generate Chart Report:[/bold green] {self.generate_chart_report}")
+        debug_output.write("[bold blue]Running trials...[/bold blue]")
+
+    def log_message(self, text: str):
+        """Thread-safe method for logging outputs"""
+        debug_output = self.query_one(RichLog)
+        debug_output.write(text)
+
+    def clear_log(self):
+        """Thread-safe method for clearing log"""
+        debug_output = self.query_one(RichLog)
+        debug_output.clear()
 
 
 if __name__ == "__main__":

@@ -160,7 +160,7 @@ class PPOAgentBase(ABC):
         self.save_artifact()
         self.wdb.finish()
 
-    def play(self) -> int:
+    def play(self) -> tuple:
         """See the agent perform in selected environment."""
         state = self.env.reset()
         done = False
@@ -170,7 +170,7 @@ class PPOAgentBase(ABC):
             self.env.render()
 
         steps, reward = self.env.get_episode_info()
-        return reward
+        return reward, steps
 
     def save_model(self):
         """INFERENCE ONLY -- Saves state dict of the model"""
