@@ -32,7 +32,7 @@ class PPOAgentBase(ABC):
 
     @abstractmethod
     def evaluate_actions(
-        self, batch_states: torch.tensor, batch_actions: torch.tensor
+        self, batch_states: torch.Tensor, batch_actions: torch.Tensor
     ) -> tuple:
         """Evaluates actions for a batch of states."""
         pass
@@ -44,11 +44,11 @@ class PPOAgentBase(ABC):
 
     def compute_advantages(
         self,
-        rewards: torch.tensor,
-        values: torch.tensor,
-        last_value: torch.tensor,
-        dones: torch.tensor,
-    ) -> torch.tensor:
+        rewards: torch.Tensor,
+        values: torch.Tensor,
+        last_value: torch.Tensor,
+        dones: torch.Tensor,
+    ) -> torch.Tensor:
         """Compute advantages using Generalized Advantage Estimation (GAE)."""
         advantages = torch.zeros_like(rewards, dtype=torch.float32).to(self.device)
         gae = 0.0

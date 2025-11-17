@@ -41,11 +41,12 @@ class PPOAgentDiscrete(PPOAgentBase):
             eps=1e-5,  # https://iclr-blog-track.github.io/2022/03/25/ppo-implementation-details/
         )
 
-    def get_action(self, state: np.ndarray) -> tuple:
+    def get_action(self, state: np.ndarray, deterministic: bool = False) -> tuple:
         """Selects an action based on the current state using the model.
 
         Args:
             state (np.ndarray): The current state of the environment.
+            deterministic (bool): Whether to select the action deterministically.
 
         Returns:
             tuple: A tuple containing the selected action, its log probability and value estimate.
@@ -53,15 +54,19 @@ class PPOAgentDiscrete(PPOAgentBase):
         state_tensor = torch.tensor(state, dtype=torch.float32).to(self.device)
         with torch.no_grad():
             logits, value = self.model(state_tensor)
-            action_probs = torch.softmax(logits, dim=-1)
-            action_distribution = torch.distributions.Categorical(action_probs)
-            action = action_distribution.sample()
+            action_distribution = torch.distributions.Categorical(logits=logits)
+
+            if deterministic:
+                action = action_distribution.mode
+            else:
+                action = action_distribution.sample()
+
             log_prob = action_distribution.log_prob(action)
 
         return action.item(), log_prob.item(), value.item()
 
     def evaluate_actions(
-        self, batch_states: torch.tensor, batch_actions: torch.tensor
+        self, batch_states: torch.Tensor, batch_actions: torch.Tensor
     ) -> tuple:
         """Evaluates actions for a batch of states.
 

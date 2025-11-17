@@ -64,7 +64,7 @@ class PPOAgentContinuous(PPOAgentBase):
         return action, log_prob.item(), value.item()
 
     def evaluate_actions(
-        self, batch_states: torch.tensor, batch_actions: torch.tensor
+        self, batch_states: torch.Tensor, batch_actions: torch.Tensor
     ) -> tuple:
         mean, log_std, values_pred = self.model(batch_states)
         values_pred = values_pred.squeeze(-1)
