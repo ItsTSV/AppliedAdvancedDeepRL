@@ -1,10 +1,10 @@
 import numpy as np
 import torch
 from torch.distributions import Normal
-from environment_manager import EnvironmentManager
-from wandb_wrapper import WandbWrapper
-from ppo_models import ContinuousActorCriticNet
-from ppo_agent_base import PPOAgentBase
+from src.utils.environment_manager import EnvironmentManager
+from src.utils.wandb_wrapper import WandbWrapper
+from .models import ContinuousActorCriticNet
+from .agent_base import PPOAgentBase
 
 
 class PPOAgentContinuous(PPOAgentBase):

@@ -2,10 +2,10 @@ import numpy as np
 import torch
 from collections import deque
 import os
-from environment_manager import EnvironmentManager
-from wandb_wrapper import WandbWrapper
-from rainbow_models import DuelingQRDQN
-from rainbow_memory import PrioritizedExperienceReplay
+from src.utils.environment_manager import EnvironmentManager
+from src.utils.wandb_wrapper import WandbWrapper
+from .models import DuelingQRDQN
+from .memory import PrioritizedExperienceReplay
 
 
 class RainbowAgent:

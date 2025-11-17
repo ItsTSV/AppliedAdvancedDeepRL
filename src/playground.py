@@ -1,6 +1,6 @@
-import glob
 import os
 import pandas as pd
+from pathlib import Path
 from textual.app import App, ComposeResult
 from textual.widgets import (
     Header,
@@ -14,12 +14,12 @@ from textual.widgets import (
     RichLog
 )
 from textual.validation import Regex
-from data_lab import generate_distribution_plot, generate_scatter_plot
-from wandb_wrapper import WandbWrapper
-from environment_manager import EnvironmentManager
-from ppo_agent_continuous import PPOAgentContinuous
-from ppo_models import ContinuousActorCriticNet
-from sac_agent import SACAgent
+from src.utils.data_lab import generate_distribution_plot, generate_scatter_plot
+from src.utils.wandb_wrapper import WandbWrapper
+from src.utils.environment_manager import EnvironmentManager
+from src.ppo.agent_continuous import PPOAgentContinuous
+from src.ppo.models import ContinuousActorCriticNet
+from src.sac.agent import SACAgent
 
 
 class RlPlayground(App):
@@ -29,12 +29,18 @@ class RlPlayground(App):
 
     def __init__(self):
         super().__init__()
+        # Application variables
         self.config_path = None
         self.model_path = None
         self.render_mode = None
         self.num_trials = 1
         self.generate_csv_log = False
         self.generate_chart_report = False
+
+        # Path stuff
+        self.project_root = Path(__file__).parent.parent.resolve()
+        self.config_dir = self.project_root / "config"
+        self.models_dir = self.project_root / "models"
 
     def compose(self) -> ComposeResult:
         """Create child widgets for the app"""
@@ -44,14 +50,16 @@ class RlPlayground(App):
         # Configuration file selector
         yield Markdown("# Select Configuration File")
         with RadioSet(id="config_selector"):
-            for config_file in glob.glob("../config/*yaml"):
-                yield RadioButton(config_file)
+            for config_file_path in self.config_dir.glob("*.yaml"):
+                display_name = str(config_file_path.relative_to(self.project_root))
+                yield RadioButton(display_name)
 
         # Model selector
         yield Markdown("# Select Model File")
         with RadioSet(id="model_selector"):
-            for model_file in glob.glob("../models/*pth"):
-                yield RadioButton(model_file)
+            for model_file_path in self.models_dir.glob("*.pth"):
+                display_name = str(model_file_path.relative_to(self.project_root))
+                yield RadioButton(display_name)
             yield RadioButton("RANDOM POLICY")
 
         # Render settings
@@ -98,9 +106,11 @@ class RlPlayground(App):
     def on_radio_set_changed(self, event: RadioSet.Changed) -> None:
         """Handle radio set change events to log selections"""
         if event.radio_set.id == "config_selector":
-            self.config_path = os.path.normpath(str(event.pressed.label))
+            relative_path_str = str(event.pressed.label)
+            self.config_path = str(self.project_root / relative_path_str)
         elif event.radio_set.id == "model_selector":
-            self.model_path = os.path.normpath(str(event.pressed.label))
+            relative_path_str = str(event.pressed.label)
+            self.model_path = str(self.project_root / relative_path_str)
         elif event.radio_set.id == "render_selector":
             self.render_mode = os.path.normpath(str(event.pressed.label))
 
@@ -178,13 +188,17 @@ class RlPlayground(App):
         self.call_later(self.log_message, f"[bold magenta]Average Reward:[/bold magenta] {average_reward}")
 
         # Generate charts / save to csv
+        output_dir = self.project_root / "outputs"
+        output_dir.mkdir(parents=True, exist_ok=True)
         tmp_name = self.model_path.split(os.sep)[-1]
+
         if self.generate_chart_report:
-            self.call_later(generate_distribution_plot, df, tmp_name)
-            self.call_later(generate_scatter_plot, df, tmp_name)
+            self.call_later(generate_distribution_plot, df, tmp_name, output_dir)
+            self.call_later(generate_scatter_plot, df, tmp_name, output_dir)
 
         if self.generate_csv_log:
-            df.to_csv(f"../outputs/{tmp_name}_run.csv")
+            csv_path = str(output_dir / f"{tmp_name}_run.csv")
+            df.to_csv(csv_path)
 
         # Finish writeup
         self.call_later(self.log_message, "[bold blue]Trials finished[/bold blue]")

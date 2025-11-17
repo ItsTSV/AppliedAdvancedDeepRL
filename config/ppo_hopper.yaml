@@ -7,14 +7,14 @@
 # Changing it adjusts the way agents behave and learn.
 project: "Hopper-v5"
 name: "PPO"
-dir: "../logs"
+dir: "logs"
 notes: "Training Hopper-v5 using PPO"
 monitor_gym: "False"
 config:
   # Environment, logging and saving control
   environment: "Hopper-v5"                  # Environment to use
   algorithm: "PPO Continuous"               # What kind of algorithm to use?
-  save_dir: "../models/"                    # Where to save model?
+  save_dir: "models"                        # Where to save model?
   save_name: "ppo_hopper"                   # Model name
   save_interval: 50                         # How many previous episodes will be used to calculate mean reward?
   total_steps: 1_000_000                    # For how many steps will the agent train?

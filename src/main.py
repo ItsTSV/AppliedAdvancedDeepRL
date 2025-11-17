@@ -1,17 +1,13 @@
-from wandb_wrapper import WandbWrapper
-import numpy as np
-from environment_manager import EnvironmentManager
-from ppo_agent_discrete import PPOAgentDiscrete
-from ppo_agent_continuous import PPOAgentContinuous
-from ppo_models import DiscreteActorCriticNet, ContinuousActorCriticNet
-from sac_agent import SACAgent
-from rainbow_agent import RainbowAgent
+from src.utils.wandb_wrapper import WandbWrapper
+from src.utils.environment_manager import EnvironmentManager
+from src.ppo.agent_continuous import PPOAgentContinuous
+from src.ppo.models import ContinuousActorCriticNet
 
 # Initialize WandbWrapper
-#wdb = WandbWrapper("../config/rainbow.yaml")
-#wdb = WandbWrapper("../config/sac.yaml")
-#wdb = WandbWrapper("../config/ppo_discrete.yaml")
-wdb = WandbWrapper("../config/ppo_ant.yaml")
+#wdb = WandbWrapper("config/rainbow.yaml")
+#wdb = WandbWrapper("config/sac.yaml")
+#wdb = WandbWrapper("config/ppo_discrete.yaml")
+wdb = WandbWrapper("config/ppo_ant.yaml")
 
 # Initialize environment
 name = wdb.get_hyperparameter("environment")

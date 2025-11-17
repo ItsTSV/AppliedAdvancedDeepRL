@@ -6,7 +6,7 @@ domain; though there might be some other simulated environments as well, if ther
 ### Implemented algorithms:
 - [x] Proximal Policy Optimization (PPO)
 - [x] Soft Actor-Critic (SAC)
-- [x] Rainbow DQN (might be swapped out for some other algorithm, such as TD3 or DDPG later on)
+- [ ] Rainbow DQN implemented, but abandoned -- will be switched for TD3 or something like that ;)
 
 ### Environments to solve:
 - [ ] MuJoCo
@@ -22,6 +22,13 @@ later on, models will be stored on Hugging Face instead. You can find them [here
 ### Training logs and videos:
 Training logs and videos will be stored on Weights & Biases, later on Streamlit presentation page. For now, they remain
 private.
+
+### Training and testing agents
+Both scripts must be run from Root Directory -- if they are not, the paths and imports might be broken.
+
+Training: ```python -m src.main```
+
+Testing: ```python -m src.playground```
 
 ### Commands
 To ensure compactibility of all libraries (mainly torch and its components: torchrl, torchvision etc...), requirements.txt

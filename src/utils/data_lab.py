@@ -1,14 +1,16 @@
+from pathlib import Path
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 
 
-def generate_distribution_plot(df: pd.DataFrame, name: str):
+def generate_distribution_plot(df: pd.DataFrame, name: str, output_dir: Path):
     """Generates a plot that maps distribution of agent rewards.
 
     Args:
         df (pd.DataFrame): DataFrame with trial-reward-steps data
         name (str): Name of the tested model
+        output_dir (Path): Absolute path to save directory
     """
     # General seaborn settings
     sns.set_theme(style="darkgrid", palette="muted")
@@ -38,16 +40,18 @@ def generate_distribution_plot(df: pd.DataFrame, name: str):
 
     # Save it to outputs
     plot.tight_layout()
-    plot.figure.savefig(f"../outputs/{name}_distribution.png")
+    save_path = output_dir / f"{name}_distribution.png"
+    plot.figure.savefig(save_path)
     plt.close()
 
 
-def generate_scatter_plot(df: pd.DataFrame, name: str):
+def generate_scatter_plot(df: pd.DataFrame, name: str, output_dir: Path):
     """Generates a plot that maps steps taken - reward received relation.
 
     Args:
         df (pd.DataFrame): DataFrame with trial-reward-steps data
         name (str): Name of the tested model
+        output_dir (Path): Absolute path to save directory
     """
     # General seaborn settings
     sns.set_theme(style="darkgrid", palette="muted")
@@ -61,5 +65,6 @@ def generate_scatter_plot(df: pd.DataFrame, name: str):
     plot.set_title(f"Step-Reward Distribution of {name} (N = {len(df)})")
 
     # Save it to outputs
-    plot.figure.savefig(f"../outputs/{name}_scatter.png")
+    save_path = output_dir / f"{name}_scatter.png"
+    plot.figure.savefig(save_path)
     plt.close()

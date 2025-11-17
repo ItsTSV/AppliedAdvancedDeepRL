@@ -1,4 +1,3 @@
-import ale_py
 import gymnasium as gym
 from gymnasium import wrappers
 import numpy as np
@@ -44,7 +43,7 @@ class EnvironmentManager:
         )
         self.env = wrappers.FrameStackObservation(self.env, 4)
 
-    def build_video_recorder(self, video_folder: str = "../outputs/", fps: int = 120):
+    def build_video_recorder(self, video_folder: str = "outputs/", fps: int = 120):
         """Wraps itself in a video recorder wrapper.
 
         Args:

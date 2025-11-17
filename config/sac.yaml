@@ -7,17 +7,17 @@
 # Changing it adjusts the way agents behave and learn.
 project: "RL MountainCar"
 name: "SAC"
-dir: "../logs"
+dir: "logs"
 notes: "Testing algorithm functionality, logging and model saving -- SAC."
 monitor_gym: "False"
 config:
   # Environment, logging and saving control
   environment: "MountainCarContinuous-v0"   # Environment to use
   algorithm: "SAC"                          # What kind of algorithm to use?
-  save_dir: "../models/"                    # Where to save model?
+  save_dir: "models"                        # Where to save model?
   save_name: "SACMountainCar"               # Model name
   save_interval: 25                         # How many previous episodes will be used to calculate mean reward?
-  total_steps: 75000                        # For how many steps will the agent train?
+  total_steps: 10000                        # For how many steps will the agent train?
   episode_steps: 999                        # How many steps before the episode is terminated?
   # Algorithm hyperparameters
   memory_size: 15000                        # How many steps can fit into the memory?
@@ -30,3 +30,4 @@ config:
   log_std_max: 2                            # Std normalisation upper bound
   batch_size: 256                           # How many steps are sampled from memory when optimising?
   gamma: 0.99                               # Discount factor
+  network_size: 128                         # Number of neurons in each hidden layer

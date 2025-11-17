@@ -7,17 +7,17 @@
 # Changing it adjusts the way agents behave and learn.
 project: "Ant-v5"
 name: "PPO"
-dir: "../logs"
+dir: "logs"
 notes: "Training Ant-v5 using PPO"
 monitor_gym: "False"
 config:
   # Environment, logging and saving control
   environment: "Ant-v5"                     # Environment to use
   algorithm: "PPO Continuous"               # What kind of algorithm to use?
-  save_dir: "../models/"                    # Where to save model?
+  save_dir: "models"                        # Where to save model?
   save_name: "ppo_ant"                      # Model name
   save_interval: 50                         # How many previous episodes will be used to calculate mean reward?
-  total_steps: 1_000_000                    # For how many steps will the agent train?
+  total_steps: 1_000_0                    # For how many steps will the agent train?
   episode_steps: 1250                       # How many steps before the episode is terminated?
   # Algorithm hyperparameters
   gamma: 0.99                               # Discount factor for future rewards
