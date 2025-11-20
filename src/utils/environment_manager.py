@@ -114,7 +114,7 @@ class EnvironmentManager:
 
         self.episode_steps += 1
         self.episode_reward += episode_reward
-        return state, episode_reward, finished, info
+        return state, episode_reward, terminated, finished, info
 
     def reset(self) -> np.ndarray:
         """Resets the environment, returns a new state"""

@@ -7,7 +7,7 @@ from src.ppo.models import ContinuousActorCriticNet
 #wdb = WandbWrapper("config/rainbow.yaml")
 #wdb = WandbWrapper("config/sac.yaml")
 #wdb = WandbWrapper("config/ppo_discrete.yaml")
-wdb = WandbWrapper("config/ppo_ant.yaml")
+wdb = WandbWrapper("config/ppo_walker2d.yaml")
 
 # Initialize environment
 name = wdb.get_hyperparameter("environment")

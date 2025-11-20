@@ -97,7 +97,7 @@ class PPOAgentBase(ABC):
                 action, log_prob, value = self.get_action(state)
 
                 # Advance the environment
-                new_state, reward, done, _ = self.env.step(action)
+                new_state, reward, _, done, _ = self.env.step(action)
 
                 # Add step to memory, change state
                 rollout_size = self.memory.add(
@@ -171,7 +171,7 @@ class PPOAgentBase(ABC):
         done = False
         while not done:
             action, _, _ = self.get_action(state, deterministic=True)
-            state, reward, done, _ = self.env.step(action)
+            state, reward, _, done, _ = self.env.step(action)
             self.env.render()
 
         steps, reward = self.env.get_episode_info()
