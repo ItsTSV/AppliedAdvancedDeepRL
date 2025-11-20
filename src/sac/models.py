@@ -5,21 +5,21 @@ import torch.nn as nn
 class QNet(nn.Module):
     """Q-Network for predicting values; serves as a critic in SAC."""
 
-    def __init__(self, action_space_size: int, state_space_size: int):
+    def __init__(self, action_space_size: int, state_space_size: int, network_size: int):
         super().__init__()
         self.network = nn.Sequential(
-            nn.Linear(state_space_size + action_space_size, 256),
+            nn.Linear(state_space_size + action_space_size, network_size),
             nn.ReLU(),
-            nn.Linear(256, 256),
+            nn.Linear(network_size, network_size),
             nn.ReLU(),
-            nn.Linear(256, 1),
+            nn.Linear(network_size, 1),
         )
 
-    def forward(self, state: torch.tensor, action: torch.tensor) -> torch.tensor:
+    def forward(self, state: torch.Tensor, action: torch.Tensor) -> torch.Tensor:
         """Forward pass through the network.
 
         Returns:
-            torch.tensor: Estimated Q-value of action in a state
+            torch.Tensor: Estimated Q-value of action in a state
         """
         x = torch.cat([state, action], dim=-1)
         return self.network(x)
@@ -28,22 +28,22 @@ class QNet(nn.Module):
 class ActorNet(nn.Module):
     """Policy network for SAC."""
 
-    def __init__(self, action_space_size: int, state_space_size: int):
+    def __init__(self, action_space_size: int, state_space_size: int, network_size: int):
         super().__init__()
         self.network = nn.Sequential(
-            nn.Linear(state_space_size, 256),
-            nn.ReLU(),
-            nn.Linear(256, 256),
-            nn.ReLU(),
+            nn.Linear(state_space_size, network_size),
+            nn.Tanh(),
+            nn.Linear(network_size, network_size),
+            nn.Tanh(),
         )
-        self.mean_head = nn.Linear(256, action_space_size)
-        self.log_std_head = nn.Linear(256, action_space_size)
+        self.mean_head = nn.Linear(network_size, action_space_size)
+        self.log_std_head = nn.Linear(network_size, action_space_size)
 
-    def forward(self, x: torch.tensor) -> tuple:
+    def forward(self, x: torch.Tensor) -> tuple:
         """Forwards pass through the network.
 
          Args:
-            x (torch.tensor): Input tensor representing the state.
+            x (torch.Tensor): Input tensor representing the state.
 
         Returns:
             tuple: Means of gaussian distribution, log standard deviation

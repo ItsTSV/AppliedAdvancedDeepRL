@@ -27,11 +27,18 @@ class SACAgent:
 
         # Create models and memory based on env parameters
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.actor = ActorNet(action_count, state_count).to(self.device)
-        self.qnet1 = QNet(action_count, state_count).to(self.device)
-        self.qnet2 = QNet(action_count, state_count).to(self.device)
-        self.qnet1_target = QNet(action_count, state_count).to(self.device)
-        self.qnet2_target = QNet(action_count, state_count).to(self.device)
+        network_size = self.wdb.get_hyperparameter("network_size")
+
+        # Actor
+        self.actor = ActorNet(action_count, state_count, network_size).to(self.device)
+
+        # Q-Networks
+        self.qnet1 = QNet(action_count, state_count, network_size).to(self.device)
+        self.qnet2 = QNet(action_count, state_count, network_size).to(self.device)
+
+        # Target networks
+        self.qnet1_target = QNet(action_count, state_count, network_size).to(self.device)
+        self.qnet2_target = QNet(action_count, state_count, network_size).to(self.device)
 
         # Target networks start with same weights as policy ones
         self.qnet1_target.load_state_dict(self.qnet1.state_dict())

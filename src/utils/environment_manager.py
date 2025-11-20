@@ -30,19 +30,6 @@ class EnvironmentManager:
         self.env = wrappers.NormalizeObservation(self.env)
         self.norm_wrapper = self.env
 
-    def build_convolutional(self):
-        """Wraps itself in wrappers that are used for environments with continuous state space.
-
-        When the episode starts, randomly skips up to 10 steps to ensure stochasticity.
-        The environment images are scaled to width and height of 84x84; converted from RGB to gray scale and
-        pixel value is scaled from [0,255] to [0,1].
-        The frames are stacked, so the agent does know dynamic context.
-        """
-        self.env = wrappers.AtariPreprocessing(
-            self.env, noop_max=10, frame_skip=1, scale_obs=True
-        )
-        self.env = wrappers.FrameStackObservation(self.env, 4)
-
     def build_video_recorder(self, video_folder: str = "outputs/", fps: int = 120):
         """Wraps itself in a video recorder wrapper.
 
@@ -101,6 +88,10 @@ class EnvironmentManager:
     def get_state_shape(self) -> tuple:
         """Returns state shape"""
         return self.env.observation_space.shape
+
+    def get_random_action(self) -> np.ndarray:
+        """Returns action sampled from environment"""
+        return self.env.action_space.sample()
 
     def step(self, action) -> tuple:
         """Advances the environment, processes the output
