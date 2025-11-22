@@ -40,6 +40,10 @@ class SACAgent:
         self.qnet1_target = QNet(action_count, state_count, network_size).to(self.device)
         self.qnet2_target = QNet(action_count, state_count, network_size).to(self.device)
 
+        # Adaptive entropy temperature
+        self.target_entropy = -float(action_count)
+        self.log_alpha = torch.zeros(1, requires_grad=True, device=self.device)
+
         # Target networks start with same weights as policy ones
         self.qnet1_target.load_state_dict(self.qnet1.state_dict())
         self.qnet2_target.load_state_dict(self.qnet2.state_dict())
@@ -47,6 +51,12 @@ class SACAgent:
         # Create memory
         memory_size = self.wdb.get_hyperparameter("memory_size")
         self.memory = ReplayBuffer(memory_size, action_count, state_count)
+
+        # Lock target networks
+        for param in self.qnet1_target.parameters():
+            param.requires_grad = False
+        for param in self.qnet2_target.parameters():
+            param.requires_grad = False
 
         # Optimizers
         self.optimizer_actor = torch.optim.Adam(
@@ -56,6 +66,10 @@ class SACAgent:
         self.optimizer_q = torch.optim.Adam(
             itertools.chain(self.qnet1.parameters(), self.qnet2.parameters()),
             lr=self.wdb.get_hyperparameter("learning_rate_q"),
+        )
+        self.optimizer_alpha = torch.optim.Adam(
+            [self.log_alpha],
+            lr=self.wdb.get_hyperparameter("learning_rate_actor")
         )
 
         # File handling
@@ -72,29 +86,28 @@ class SACAgent:
             action: Action tensor with [-1, 1 bounds]
             log_prob: Log probability of selected action
         """
-        if isinstance(state, np.ndarray):
-            state = torch.tensor(state, dtype=torch.float32).to(self.device)
+        # Get log std range hyperparameters
         log_std_min = self.wdb.get_hyperparameter("log_std_min")
         log_std_max = self.wdb.get_hyperparameter("log_std_max")
 
-        with torch.no_grad():
-            mean, log_std = self.actor(state)
+        # Get mean and log standard deviation of action
+        mean, log_std = self.actor(state)
 
-            # Normalise (OpenAI version)
-            log_std = torch.tanh(log_std)
-            log_std = log_std_min + 0.5 * (log_std_max - log_std_min) * log_std + 1
+        # Normalise (OpenAI version)
+        log_std = torch.tanh(log_std)
+        log_std = log_std_min + 0.5 * (log_std_max - log_std_min) * (log_std + 1)
 
-            # Distribution and re-parametrisation trick
-            std = log_std.exp()
-            normal = torch.distributions.Normal(mean, std)
-            z = normal.rsample()
-            action = torch.tanh(z)
+        # Distribution and re-parametrisation trick
+        std = log_std.exp()
+        normal = torch.distributions.Normal(mean, std)
+        z = normal.rsample()
+        action = torch.tanh(z)
 
-            # Because tanh was used, logprobs need to be adjusted
-            log_prob = normal.log_prob(z) - torch.log(1 - action.pow(2) + 1e-6)
-            log_prob = log_prob.sum(dim=-1, keepdim=True)
+        # Because tanh was used, logprobs need to be adjusted
+        log_prob = normal.log_prob(z) - torch.log(1 - action.pow(2) + 1e-6)
+        log_prob = log_prob.sum(dim=-1, keepdim=True)
 
-            return action, log_prob
+        return action, log_prob
 
     def optimize_q_networks(self) -> tuple:
         """Optimizes Q-policy networks using data from memory
@@ -109,7 +122,7 @@ class SACAgent:
 
         # Compute next Q-values using Q-target networks
         gamma = self.wdb.get_hyperparameter("gamma")
-        alpha = self.wdb.get_hyperparameter("entropy_temperature")
+        alpha = self.log_alpha.exp().item()
         with torch.no_grad():
             next_actions, next_log_probs = self.get_action(next_states)
             next_targets_qnet1 = self.qnet1_target(next_states, next_actions)
@@ -135,29 +148,37 @@ class SACAgent:
 
         return q_loss.item(), q1_loss.item(), q2_loss.item()
 
-    def optimize_actor_network(self) -> float:
-        """Optimizes actor network using data from memory"""
+    def optimize_actor_network(self) -> tuple:
+        """Optimizes actor network and entropy temperature using data from memory"""
         # Sample data from memory
         batch_size = self.wdb.get_hyperparameter("batch_size")
         states, _, _, _, _ = self.memory.sample(batch_size)
 
-        # Get next_actions and their Q-values
-        next_actions, log_probs = self.get_action(states)
-        q1_values = self.qnet1(states, next_actions)
-        q2_values = self.qnet2(states, next_actions)
+        # Get current_actions and their Q-values
+        current_actions, log_probs = self.get_action(states)
+        q1_values = self.qnet1(states, current_actions)
+        q2_values = self.qnet2(states, current_actions)
         min_q_values = torch.min(q1_values, q2_values)
 
         # Compute actor loss
-        alpha = self.wdb.get_hyperparameter("entropy_temperature")
+        alpha = self.log_alpha.exp().item()
         actor_loss = log_probs * alpha - min_q_values
         actor_loss = actor_loss.mean()
 
-        # Run gradient descent
+        # Optimize actor
         self.optimizer_actor.zero_grad()
         actor_loss.backward()
         self.optimizer_actor.step()
 
-        return actor_loss.item()
+        # Alpha loss
+        alpha_loss = -(self.log_alpha * (log_probs + self.target_entropy).detach()).mean()
+
+        # Optimize
+        self.optimizer_alpha.zero_grad()
+        alpha_loss.backward()
+        self.optimizer_alpha.step()
+
+        return actor_loss.item(), alpha_loss.item(), alpha
 
     def polyak_update(self, source: torch.nn.Module, target: torch.nn.Module):
         """Updates target networks by polyak averaging."""
@@ -184,21 +205,25 @@ class SACAgent:
                 # Update steps
                 total_steps += 1
 
-                # Get action from the model
-                action, _ = self.get_action(state)
-                action = action.item()
+                # Get action (from network -- needs to be detached and have its batch removed)
+                if total_steps < warmup_steps:
+                    action = self.env.get_random_action()
+                else:
+                    state_tensor = torch.tensor(state).to(self.device).unsqueeze(0)
+                    action, log_probs = self.get_action(state_tensor)
+                    action = action.detach().cpu().numpy()[0]
 
                 # Advance the environment
-                next_state, reward, done, _ = self.env.step(action)
+                next_state, reward, terminated, done, _ = self.env.step(action)
 
                 # Add to memory, adjust new state
-                self.memory.add(state, action, reward, next_state, done)
+                self.memory.add(state, action, reward, next_state, terminated)
                 state = next_state
 
                 # If a warmup period is over, run optimisation
                 if total_steps > warmup_steps:
                     q_loss, q1_loss, q2_loss = self.optimize_q_networks()
-                    actor_loss = self.optimize_actor_network()
+                    actor_loss, alpha_loss, alpha = self.optimize_actor_network()
                     self.polyak_update(self.qnet1, self.qnet1_target)
                     self.polyak_update(self.qnet2, self.qnet2_target)
 
@@ -211,6 +236,8 @@ class SACAgent:
                                 "Q1 Loss": q1_loss,
                                 "Q2 Loss": q2_loss,
                                 "Actor Loss": actor_loss,
+                                "Alpha Loss": alpha_loss,
+                                "Alpha": alpha,
                             }
                         )
 
@@ -222,7 +249,7 @@ class SACAgent:
 
                     # Calculate mean rewards in last episodes
                     reward_buffer.append(episode_reward)
-                    mean = np.sum(reward_buffer) / save_interval
+                    mean = np.mean(reward_buffer)
 
                     # Save model callback
                     if mean > best_mean:
@@ -265,8 +292,10 @@ class SACAgent:
         state = self.env.reset()
         done = False
         while not done:
+            state = torch.tensor(state).to(self.device).unsqueeze(0)
             action, _ = self.get_action(state)
-            state, reward, done, _ = self.env.step(action.item())
+            action = action.detach().cpu().numpy()[0]
+            state, reward, _, done, _ = self.env.step(action)
             self.env.render()
 
         steps, reward = self.env.get_episode_info()

@@ -32,9 +32,9 @@ class ActorNet(nn.Module):
         super().__init__()
         self.network = nn.Sequential(
             nn.Linear(state_space_size, network_size),
-            nn.Tanh(),
+            nn.ReLU(),
             nn.Linear(network_size, network_size),
-            nn.Tanh(),
+            nn.ReLU(),
         )
         self.mean_head = nn.Linear(network_size, action_space_size)
         self.log_std_head = nn.Linear(network_size, action_space_size)
