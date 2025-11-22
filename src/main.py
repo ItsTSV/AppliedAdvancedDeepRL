@@ -6,7 +6,7 @@ from src.sac.agent import SACAgent
 
 # Initialize WandbWrapper
 #wdb = WandbWrapper("config/ppo_walker2d.yaml")
-wdb = WandbWrapper("config/sac_hopper.yaml")
+wdb = WandbWrapper("config/sac_half_cheetah.yaml")
 
 # Initialize environment
 name = wdb.get_hyperparameter("environment")

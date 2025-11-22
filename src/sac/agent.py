@@ -76,7 +76,7 @@ class SACAgent:
         current_path = Path(__file__).resolve()
         self.project_root = current_path.parent.parent.parent
 
-    def get_action(self, state) -> tuple:
+    def get_action(self, state, deterministic=False) -> tuple:
         """Selects an action based on the current state using the actor.
 
         Args:
@@ -92,6 +92,11 @@ class SACAgent:
 
         # Get mean and log standard deviation of action
         mean, log_std = self.actor(state)
+
+        # For evaluation
+        if deterministic:
+            action = torch.tanh(mean)
+            return action, None
 
         # Normalise (OpenAI version)
         log_std = torch.tanh(log_std)
@@ -144,6 +149,11 @@ class SACAgent:
         # Optimise Q-policy networks via gradient descent
         self.optimizer_q.zero_grad()
         q_loss.backward()
+
+        # Clip gradients
+        max_grad_norm = self.wdb.get_hyperparameter("max_grad_norm")
+        torch.nn.utils.clip_grad_norm_(self.qnet1.parameters(), max_grad_norm)
+        torch.nn.utils.clip_grad_norm_(self.qnet2.parameters(), max_grad_norm)
         self.optimizer_q.step()
 
         return q_loss.item(), q1_loss.item(), q2_loss.item()
@@ -168,14 +178,21 @@ class SACAgent:
         # Optimize actor
         self.optimizer_actor.zero_grad()
         actor_loss.backward()
+
+        # Clip gradients
+        max_grad_norm = self.wdb.get_hyperparameter("max_grad_norm")
+        torch.nn.utils.clip_grad_norm_(self.actor.parameters(), max_grad_norm)
         self.optimizer_actor.step()
 
         # Alpha loss
         alpha_loss = -(self.log_alpha * (log_probs + self.target_entropy).detach()).mean()
 
-        # Optimize
+        # Optimize alpha
         self.optimizer_alpha.zero_grad()
         alpha_loss.backward()
+
+        # Clip gradients
+        torch.nn.utils.clip_grad_norm_([self.log_alpha], max_grad_norm)
         self.optimizer_alpha.step()
 
         return actor_loss.item(), alpha_loss.item(), alpha
@@ -215,9 +232,10 @@ class SACAgent:
 
                 # Advance the environment
                 next_state, reward, terminated, done, _ = self.env.step(action)
+                scaled_reward = reward / self.wdb.get_hyperparameter("reward_scale")
 
                 # Add to memory, adjust new state
-                self.memory.add(state, action, reward, next_state, terminated)
+                self.memory.add(state, action, scaled_reward, next_state, terminated)
                 state = next_state
 
                 # If a warmup period is over, run optimisation
@@ -293,14 +311,13 @@ class SACAgent:
         done = False
         while not done:
             state = torch.tensor(state).to(self.device).unsqueeze(0)
-            action, _ = self.get_action(state)
+            action, _ = self.get_action(state, deterministic=False)
             action = action.detach().cpu().numpy()[0]
             state, reward, _, done, _ = self.env.step(action)
             self.env.render()
 
         steps, reward = self.env.get_episode_info()
-        print(f"Test run finished in {steps} steps with {reward} reward!")
-        self.env.close()
+        return reward, steps
 
     def save_model(self):
         """INFERENCE ONLY -- Saves state dict of the model"""
