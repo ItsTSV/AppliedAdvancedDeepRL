@@ -4,23 +4,28 @@ heavily work in progress, but there are some parts already done. The environment
 domain; though there might be some other simulated environments as well, if there is enough time and computational resources ;)
 
 ### Implemented algorithms:
+All the implementations are self-contained, meaning that the logic -- optimization methods, training loops, 
+neural networks, etc. -- are kept in a single directory that corresponds to each algorithm. The only code shared amongst 
+the algorithms is for logging (Weights & Biases) and environment control (Gymnasium). This keeps the implementations
+more clear, for a price of very slight redundancy.
+
 - [x] Proximal Policy Optimization (PPO)
 - [x] Soft Actor-Critic (SAC)
-- [ ] Rainbow DQN implemented, but abandoned -- will be switched for TD3 or something like that ;)
+- [ ] Twin Delayed Deep Deterministic Policy Gradient (TD3)
 
 ### Environments to solve:
 - [ ] MuJoCo
   - [x] Swimmer-v5
   - [x] Hopper-v5  
   - [x] HalfCheetah-v5
-- [ ] Gymnasium-Robotics
+  - [ ] Walker2D-v5
+  - [ ] Ant-v5
 
 ### Trained models:
-I already trained some models. Storing them in GitHub repository ain't exactly a good idea; I will temporarily do it, but 
-later on, models will be stored on Hugging Face instead. You can find them [here](https://huggingface.co/collections/ItsTSV/reinforcement-learning-in-robotic-and-simulated-environments).
+I already trained some models. So far, they are stored in ```models``` folder. Will be changed soon, hopefully.
 
 ### Training logs and videos:
-Training logs and videos will be stored on Weights & Biases, later on Streamlit presentation page. For now, they remain
+Training logs and videos are be stored on Weights & Biases, later on Streamlit presentation page. For now, they remain
 private.
 
 ### Training and testing agents
