@@ -4,10 +4,10 @@ import itertools
 import torch.nn.functional as F
 from pathlib import Path
 from collections import deque
-from src.utils.environment_manager import EnvironmentManager
-from src.utils.wandb_wrapper import WandbWrapper
+from src.shared.environment_manager import EnvironmentManager
+from src.shared.wandb_wrapper import WandbWrapper
 from .models import QNet, ActorNet
-from .memory import ReplayBuffer
+from src.shared.replay_buffer import ReplayBuffer
 
 
 class SACAgent:

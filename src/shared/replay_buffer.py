@@ -3,7 +3,7 @@ import torch
 
 
 class ReplayBuffer:
-    """Buffer that serves as a storage for SAC experience data."""
+    """Buffer that serves as a storage for SAC & TD3 experience data."""
 
     def __init__(self, capacity: int, action_dim: int, state_dim: int):
         """Initializes a replay buffer for storing experiences."""

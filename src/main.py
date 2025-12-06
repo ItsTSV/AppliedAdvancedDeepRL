@@ -1,29 +1,45 @@
-from src.utils.wandb_wrapper import WandbWrapper
-from src.utils.environment_manager import EnvironmentManager
+from src.utils.arg_handler import get_args
+from src.shared.wandb_wrapper import WandbWrapper
+from src.shared.environment_manager import EnvironmentManager
 from src.ppo.agent_continuous import PPOAgentContinuous
-from src.ppo.models import ContinuousActorCriticNet
 from src.sac.agent import SACAgent
 
-# Initialize WandbWrapper
-#wdb = WandbWrapper("config/ppo_walker2d.yaml")
-wdb = WandbWrapper("config/sac_half_cheetah.yaml")
 
-# Initialize environment
-name = wdb.get_hyperparameter("environment")
-env = EnvironmentManager(name, "rgb_array")
-env.build_continuous()
+if __name__ == "__main__":
+    # Get arguments
+    args = get_args()
 
-# Initialize network
-#network_size = wdb.get_hyperparameter("network_size")
-#action_space, observation_space = env.get_dimensions()
-#model = ContinuousActorCriticNet(action_space, observation_space, network_size)
+    # Initialize WandbWrapper
+    wdb = WandbWrapper(
+        args.config,
+        args.log
+    )
 
-# Initialize PPO agent
-#agent = PPOAgentContinuous(env, wdb, model)
-agent = SACAgent(env, wdb)
+    # Initialize environment
+    name = wdb.get_hyperparameter("environment")
+    env = EnvironmentManager(name, "rgb_array")
+    env.build_continuous()
 
-# Start training
-agent.train()
+    # Initialize agent
+    algorithm = wdb.get_hyperparameter("algorithm")
+    if algorithm == "PPO Continuous":
+        agent = PPOAgentContinuous(env, wdb)
+    elif algorithm == "SAC":
+        agent = SACAgent(env, wdb)
+    else:
+        raise ValueError("Please, select a valid algorithm! [PPO Continuous, SAC, TD3]")
 
-env.close()
-wdb.finish()
+    # Sanity check -- print configurations
+    print("-" * 20)
+    print(f"Training {algorithm} agent on {name} environment.")
+    print(f"Agent type is {type(agent)}.")
+    print(f"Logging is set to {args.log}.")
+    print(f"Hyperparameters: {wdb.hyperparameters}")
+    print("-" * 20)
+
+    # Start training
+    agent.train()
+
+    # Cleanup
+    env.close()
+    wdb.finish()

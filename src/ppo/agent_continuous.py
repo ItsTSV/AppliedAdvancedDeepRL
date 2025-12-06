@@ -1,8 +1,8 @@
 import numpy as np
 import torch
 from torch.distributions import Normal
-from src.utils.environment_manager import EnvironmentManager
-from src.utils.wandb_wrapper import WandbWrapper
+from src.shared.environment_manager import EnvironmentManager
+from src.shared.wandb_wrapper import WandbWrapper
 from .models import ContinuousActorCriticNet
 from .agent_base import PPOAgentBase
 
@@ -20,9 +20,16 @@ class PPOAgentContinuous(PPOAgentBase):
         self,
         environment: EnvironmentManager,
         wandb: WandbWrapper,
-        model: ContinuousActorCriticNet,
     ):
+        # Create model
+        network_size = wandb.get_hyperparameter("network_size")
+        action_space, observation_space = environment.get_dimensions()
+        model = ContinuousActorCriticNet(action_space, observation_space, network_size)
+
+        # Initialize base class
         super().__init__(environment, wandb, model)
+
+        # Create optimiser with different learning rates for actor and critic
         self.optimizer = torch.optim.Adam(
             [
                 {

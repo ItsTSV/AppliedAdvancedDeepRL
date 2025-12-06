@@ -3,9 +3,9 @@ import torch
 from pathlib import Path
 from abc import ABC, abstractmethod
 from collections import deque
-from src.utils.environment_manager import EnvironmentManager
-from src.utils.wandb_wrapper import WandbWrapper
-from .memory import RolloutBuffer
+from src.shared.environment_manager import EnvironmentManager
+from src.shared.wandb_wrapper import WandbWrapper
+from src.shared.rollout_buffer import RolloutBuffer
 
 
 class PPOAgentBase(ABC):

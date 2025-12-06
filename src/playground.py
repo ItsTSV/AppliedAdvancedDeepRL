@@ -15,8 +15,8 @@ from textual.widgets import (
 )
 from textual.validation import Regex
 from src.utils.data_lab import generate_distribution_plot, generate_scatter_plot
-from src.utils.wandb_wrapper import WandbWrapper
-from src.utils.environment_manager import EnvironmentManager
+from src.shared.wandb_wrapper import WandbWrapper
+from src.shared.environment_manager import EnvironmentManager
 from src.ppo.agent_continuous import PPOAgentContinuous
 from src.ppo.models import ContinuousActorCriticNet
 from src.sac.agent import SACAgent
@@ -154,17 +154,14 @@ class RlPlayground(App):
         # Initialize agent
         algorithm = wdb.get_hyperparameter("algorithm")
         if algorithm == "PPO Continuous":
-            action_space, observation_space = env.get_dimensions()
-            network_size = wdb.get_hyperparameter("network_size")
-            model = ContinuousActorCriticNet(action_space, observation_space, network_size)
-            agent = PPOAgentContinuous(env, wdb, model)
+            agent = PPOAgentContinuous(env, wdb)
         elif algorithm == "SAC":
             agent = SACAgent(env, wdb)
         else:
             raise ValueError(f"Unsupported algorithm: {algorithm}")
 
         # Load model if not random policy
-        if self.model_path != "RANDOM POLICY":
+        if "RANDOM POLICY" not in self.model_path:
             try:
                 agent.load_model(self.model_path)
             except:
