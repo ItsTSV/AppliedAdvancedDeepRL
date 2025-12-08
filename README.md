@@ -6,12 +6,12 @@ domain; though there might be some other simulated environments as well, if ther
 ### Implemented algorithms:
 All the implementations are self-contained, meaning that the logic -- optimization methods, training loops, 
 neural networks, etc. -- are kept in a single directory that corresponds to each algorithm. The only code shared amongst 
-the algorithms is for logging (Weights & Biases) and environment control (Gymnasium). This keeps the implementations
+the algorithms is for saving data, logging (Weights & Biases) and environment control (Gymnasium). This keeps the implementations
 more clear, for a price of very slight redundancy.
 
 - [x] Proximal Policy Optimization (PPO)
 - [x] Soft Actor-Critic (SAC)
-- [ ] Twin Delayed Deep Deterministic Policy Gradient (TD3)
+- [x] Twin Delayed Deep Deterministic Policy Gradient (TD3)
 
 ### Environments to solve:
 - [ ] MuJoCo
