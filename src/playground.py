@@ -18,7 +18,6 @@ from src.utils.data_lab import generate_distribution_plot, generate_scatter_plot
 from src.shared.wandb_wrapper import WandbWrapper
 from src.shared.environment_manager import EnvironmentManager
 from src.ppo.agent_continuous import PPOAgentContinuous
-from src.ppo.models import ContinuousActorCriticNet
 from src.sac.agent import SACAgent
 
 
@@ -187,7 +186,7 @@ class RlPlayground(App):
         # Generate charts / save to csv
         output_dir = self.project_root / "outputs"
         output_dir.mkdir(parents=True, exist_ok=True)
-        tmp_name = self.model_path.split(os.sep)[-1]
+        tmp_name = self.model_path.rsplit(os.sep, maxsplit=1)[-1]
 
         if self.generate_chart_report:
             self.call_later(generate_distribution_plot, df, tmp_name, output_dir)

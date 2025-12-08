@@ -75,7 +75,6 @@ class EnvironmentManager:
         rms.count = data["count"]
 
     def get_dimensions(self) -> tuple:
-        """Returns state and observation space dimension"""
         return (
             (
                 len(self.env.action_space.sample())
@@ -86,11 +85,9 @@ class EnvironmentManager:
         )
 
     def get_state_shape(self) -> tuple:
-        """Returns state shape"""
         return self.env.observation_space.shape
 
     def get_random_action(self) -> np.ndarray:
-        """Returns action sampled from environment"""
         return self.env.action_space.sample()
 
     def step(self, action) -> tuple:
@@ -115,14 +112,10 @@ class EnvironmentManager:
         return new_state
 
     def get_episode_info(self) -> tuple:
-        """Returns the number of steps and total reward in the current episode"""
         return self.episode_steps, self.episode_reward
 
     def close(self) -> None:
         self.env.close()
 
     def render(self):
-        """Wrapper for gymnasium render function. The return is based on
-        selected render mode.
-        """
         return self.env.render()
