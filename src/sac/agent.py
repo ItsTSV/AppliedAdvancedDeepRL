@@ -81,6 +81,7 @@ class SACAgent:
 
         Args:
             state: The current state of the environment.
+            deterministic: False when training, True when evaluating
 
         Returns:
             action: Action tensor with [-1, 1 bounds]
@@ -115,7 +116,7 @@ class SACAgent:
         return action, log_prob
 
     def optimize_q_networks(self) -> tuple:
-        """Optimizes Q-policy networks using data from memory
+        """Optimizes Q networks using data from memory
 
         Returns:
             tuple (float, float. float): Total Q-Loss, Q1 loss, Q2 loss

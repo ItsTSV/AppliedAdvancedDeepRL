@@ -31,4 +31,4 @@ config:
   gamma: 0.99                               # Discount factor
   network_size: 256                         # Number of neurons in each hidden layer
   max_grad_norm: 1.0                        # Gradient clipping constant to prevent grad explosion
-  reward_scale: 5.0
+  reward_scale: 5.0                         # Rewards need to be scaled for entropy temperature

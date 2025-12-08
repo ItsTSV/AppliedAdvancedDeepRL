@@ -3,6 +3,7 @@ from src.shared.wandb_wrapper import WandbWrapper
 from src.shared.environment_manager import EnvironmentManager
 from src.ppo.agent_continuous import PPOAgentContinuous
 from src.sac.agent import SACAgent
+from src.td3.agent import TD3Agent
 
 
 if __name__ == "__main__":
@@ -26,6 +27,8 @@ if __name__ == "__main__":
         agent = PPOAgentContinuous(env, wdb)
     elif algorithm == "SAC":
         agent = SACAgent(env, wdb)
+    elif algorithm == "TD3":
+        agent = TD3Agent(env, wdb)
     else:
         raise ValueError("Please, select a valid algorithm! [PPO Continuous, SAC, TD3]")
 
