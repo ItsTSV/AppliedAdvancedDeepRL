@@ -32,15 +32,15 @@ class PPOAgentDiscrete(PPOAgentBase):
         self.optimizer = torch.optim.Adam(
             [
                 {
-                    "params": self.model.network.parameters(),
+                    "params": self.actor.network.parameters(),
                     "lr": self.wdb.get_hyperparameter("learning_rate_shared"),
                 },
                 {
-                    "params": self.model.actor_head.parameters(),
+                    "params": self.actor.actor_head.parameters(),
                     "lr": self.wdb.get_hyperparameter("learning_rate_actor"),
                 },
                 {
-                    "params": self.model.critic_head.parameters(),
+                    "params": self.actor.critic_head.parameters(),
                     "lr": self.wdb.get_hyperparameter("learning_rate_critic"),
                 },
             ],
@@ -59,7 +59,7 @@ class PPOAgentDiscrete(PPOAgentBase):
         """
         state_tensor = torch.tensor(state, dtype=torch.float32).to(self.device)
         with torch.no_grad():
-            logits, value = self.model(state_tensor)
+            logits, value = self.actor(state_tensor)
             action_distribution = torch.distributions.Categorical(logits=logits)
 
             if deterministic:
@@ -80,7 +80,7 @@ class PPOAgentDiscrete(PPOAgentBase):
             tuple: A tuple containing the action distribution, log probabilities,
                    value estimates, and entropy.
         """
-        logits, values_pred = self.model(batch_states)
+        logits, values_pred = self.actor(batch_states)
         values_pred = values_pred.squeeze(-1)
         action_probs = torch.softmax(logits, dim=-1)
         dist = torch.distributions.Categorical(action_probs)
@@ -104,7 +104,7 @@ class PPOAgentDiscrete(PPOAgentBase):
             if dones[-1]:
                 next_value = torch.tensor([0.0], dtype=torch.float32).to(self.device)
             else:
-                _, next_value = self.model(
+                _, next_value = self.actor(
                     torch.tensor(final_state, dtype=torch.float32).to(self.device)
                 )
 

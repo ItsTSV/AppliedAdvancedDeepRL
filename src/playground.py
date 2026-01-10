@@ -162,7 +162,7 @@ class RlPlayground(App):
         # Load model if not random policy
         if "RANDOM POLICY" not in self.model_path:
             try:
-                agent.load_model(self.model_path)
+                agent.load_model(agent.actor, self.model_path)
             except:
                 self.call_later(self.log_message,
                                 "[bold red]Make sure the model is compactible with selected agent![/bold red]")

@@ -2,15 +2,15 @@ import numpy as np
 import torch
 import itertools
 import torch.nn.functional as F
-from pathlib import Path
 from collections import deque
 from src.shared.environment_manager import EnvironmentManager
 from src.shared.wandb_wrapper import WandbWrapper
+from src.shared.agent_template import TemplateAgent
 from .models import QNet, ActorNet
 from src.shared.replay_buffer import ReplayBuffer
 
 
-class SACAgent:
+class SACAgent(TemplateAgent):
     """Agent that implements Soft Actor Critic algorithm."""
 
     def __init__(self, environment: EnvironmentManager, wandb: WandbWrapper):
@@ -20,14 +20,12 @@ class SACAgent:
             environment (EnvironmentManager): The environment in which the agent operates.
             wandb (WandbWrapper): Wandb wrapper for tracking and hyperparameter management.
         """
-        # Environment, wandb
-        self.env = environment
-        self.wdb = wandb
-        action_count, state_count = self.env.get_dimensions()
+        super().__init__(environment, wandb)
 
         # Create models and memory based on env parameters
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         network_size = self.wdb.get_hyperparameter("network_size")
+        action_count, state_count = self.env.get_dimensions()
 
         # Actor
         self.actor = ActorNet(action_count, state_count, network_size).to(self.device)
@@ -71,10 +69,6 @@ class SACAgent:
             [self.log_alpha],
             lr=self.wdb.get_hyperparameter("learning_rate_actor")
         )
-
-        # File handling
-        current_path = Path(__file__).resolve()
-        self.project_root = current_path.parent.parent.parent
 
     def get_action(self, state, deterministic=False) -> tuple:
         """Selects an action based on the current state using the actor.
@@ -273,7 +267,7 @@ class SACAgent:
                     # Save model callback
                     if mean > best_mean:
                         best_mean = mean
-                        self.save_model()
+                        self.save_model(self.actor)
                         print(
                             f"Episode {episode} -- saving model with new best mean reward: {mean}"
                         )
@@ -319,63 +313,3 @@ class SACAgent:
 
         steps, reward = self.env.get_episode_info()
         return reward, steps
-
-    def save_model(self):
-        """INFERENCE ONLY -- Saves state dict of the model"""
-        dir_parameter = self.wdb.get_hyperparameter("save_dir")
-        name = self.wdb.get_hyperparameter("save_name")
-
-        # Get save directory path
-        abs_save_dir = self.project_root / dir_parameter
-
-        # Create directory
-        abs_save_dir.mkdir(parents=True, exist_ok=True)
-
-        # Get paths
-        model_path = (abs_save_dir / name).with_suffix(".pth")
-        rms_name = name + "_rms"
-        rms_path = (abs_save_dir / rms_name).with_suffix(".npz")
-
-        # Save
-        torch.save(self.actor.state_dict(), str(model_path))
-        self.env.save_normalization_parameters(str(rms_path))
-
-    def save_artifact(self):
-        """INFERENCE ONLY -- Saves state dict to wandb"""
-        dir_parameter = self.wdb.get_hyperparameter("save_dir")
-        name = self.wdb.get_hyperparameter("save_name")
-
-        # Get save directory path
-        abs_save_dir = self.project_root / dir_parameter
-
-        # Create directory
-        abs_save_dir.mkdir(parents=True, exist_ok=True)
-
-        # Get paths
-        model_path = (abs_save_dir / name).with_suffix(".pth")
-        rms_name = name + "_rms"
-        rms_path = (abs_save_dir / rms_name).with_suffix(".npz")
-
-        # Save to WDB (online)
-        self.wdb.log_model(name, str(model_path))
-        self.wdb.log_model(name + "_rms", str(rms_path))
-
-    def load_model(self, path):
-        """INFERENCE ONLY -- Loads state dict of the model"""
-        # Model
-        model_path = self.project_root / path
-
-        if not model_path.exists():
-            raise FileNotFoundError(f"Model path does not exist: {model_path}")
-
-        # Load and eval
-        self.actor.load_state_dict(torch.load(model_path, weights_only=True))
-        self.actor.eval()
-
-        # Rms
-        rms_path = model_path.parent / (model_path.stem + "_rms.npz")
-
-        if not rms_path.exists():
-            raise FileNotFoundError(f"Normalization file not found: {rms_path}")
-
-        self.env.load_normalization_parameters(str(rms_path))

@@ -1,14 +1,14 @@
 import numpy as np
 import torch
-from pathlib import Path
 from abc import ABC, abstractmethod
 from collections import deque
 from src.shared.environment_manager import EnvironmentManager
 from src.shared.wandb_wrapper import WandbWrapper
+from src.shared.agent_template import TemplateAgent
 from src.shared.rollout_buffer import RolloutBuffer
 
 
-class PPOAgentBase(ABC):
+class PPOAgentBase(TemplateAgent, ABC):
     """Agent that serves as a base for PPO algorithm. Contains common methods and properties."""
 
     def __init__(self, environment: EnvironmentManager, wandb: WandbWrapper, model):
@@ -19,16 +19,12 @@ class PPOAgentBase(ABC):
             wandb (WandbWrapper): Wandb wrapper for tracking and hyperparameter management.
             model: The neural network model used by the agent.
         """
-        # Training items
-        self.env = environment
-        self.wdb = wandb
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.model = model.to(self.device)
-        self.memory = RolloutBuffer()
+        super().__init__(environment, wandb)
 
-        # File handling
-        current_path = Path(__file__).resolve()
-        self.project_root = current_path.parent.parent.parent
+        # Training items
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.actor = model.to(self.device)
+        self.memory = RolloutBuffer()
 
     @abstractmethod
     def get_action(self, state: np.ndarray, deterministic: bool = False) -> tuple:
@@ -132,7 +128,7 @@ class PPOAgentBase(ABC):
                     # Save model callback
                     if mean > best_mean:
                         best_mean = mean
-                        self.save_model()
+                        self.save_model(self.actor)
                         print(
                             f"Episode {episode} -- saving model with new best mean reward: {mean}"
                         )
@@ -176,63 +172,3 @@ class PPOAgentBase(ABC):
 
         steps, reward = self.env.get_episode_info()
         return reward, steps
-
-    def save_model(self):
-        """INFERENCE ONLY -- Saves state dict of the model"""
-        dir_parameter = self.wdb.get_hyperparameter("save_dir")
-        name = self.wdb.get_hyperparameter("save_name")
-
-        # Get save directory path
-        abs_save_dir = self.project_root / dir_parameter
-
-        # Create directory
-        abs_save_dir.mkdir(parents=True, exist_ok=True)
-
-        # Get paths
-        model_path = (abs_save_dir / name).with_suffix(".pth")
-        rms_name = name + "_rms"
-        rms_path = (abs_save_dir / rms_name).with_suffix(".npz")
-
-        # Save
-        torch.save(self.model.state_dict(), str(model_path))
-        self.env.save_normalization_parameters(str(rms_path))
-
-    def save_artifact(self):
-        """INFERENCE ONLY -- Saves state dict to wandb"""
-        dir_parameter = self.wdb.get_hyperparameter("save_dir")
-        name = self.wdb.get_hyperparameter("save_name")
-
-        # Get save directory path
-        abs_save_dir = self.project_root / dir_parameter
-
-        # Create directory
-        abs_save_dir.mkdir(parents=True, exist_ok=True)
-
-        # Get paths
-        model_path = (abs_save_dir / name).with_suffix(".pth")
-        rms_name = name + "_rms"
-        rms_path = (abs_save_dir / rms_name).with_suffix(".npz")
-
-        # Save to WDB (online)
-        self.wdb.log_model(name, str(model_path))
-        self.wdb.log_model(name + "_rms", str(rms_path))
-
-    def load_model(self, path):
-        """INFERENCE ONLY -- Loads state dict of the model"""
-        # Model
-        model_path = self.project_root / path
-
-        if not model_path.exists():
-            raise FileNotFoundError(f"Model path does not exist: {model_path}")
-
-        # Load and eval
-        self.model.load_state_dict(torch.load(model_path, weights_only=True))
-        self.model.eval()
-
-        # Rms
-        rms_path = model_path.parent / (model_path.stem + "_rms.npz")
-
-        if not rms_path.exists():
-            raise FileNotFoundError(f"Normalization file not found: {rms_path}")
-
-        self.env.load_normalization_parameters(str(rms_path))

@@ -33,11 +33,11 @@ class PPOAgentContinuous(PPOAgentBase):
         self.optimizer = torch.optim.Adam(
             [
                 {
-                    "params": self.model.actor.parameters(),
+                    "params": self.actor.actor.parameters(),
                     "lr": self.wdb.get_hyperparameter("learning_rate_actor"),
                 },
                 {
-                    "params": self.model.critic.parameters(),
+                    "params": self.actor.critic.parameters(),
                     "lr": self.wdb.get_hyperparameter("learning_rate_critic"),
                 },
             ],
@@ -56,7 +56,7 @@ class PPOAgentContinuous(PPOAgentBase):
         """
         state_tensor = torch.tensor(state, dtype=torch.float32).to(self.device)
         with torch.no_grad():
-            mean, log_std, value = self.model(state_tensor)
+            mean, log_std, value = self.actor(state_tensor)
             action_std = torch.exp(log_std)
             distribution = Normal(mean, action_std)
 
@@ -73,7 +73,7 @@ class PPOAgentContinuous(PPOAgentBase):
     def evaluate_actions(
         self, batch_states: torch.Tensor, batch_actions: torch.Tensor
     ) -> tuple:
-        mean, log_std, values_pred = self.model(batch_states)
+        mean, log_std, values_pred = self.actor(batch_states)
         values_pred = values_pred.squeeze(-1)
         std = torch.exp(log_std)
         dist = Normal(mean, std)
@@ -97,7 +97,7 @@ class PPOAgentContinuous(PPOAgentBase):
             if dones[-1].item():
                 next_value = torch.tensor([0.0], dtype=torch.float32).to(self.device)
             else:
-                _, _, next_value = self.model(
+                _, _, next_value = self.actor(
                     torch.tensor(final_state, dtype=torch.float32).to(self.device)
                 )
 
@@ -170,7 +170,7 @@ class PPOAgentContinuous(PPOAgentBase):
                 self.optimizer.zero_grad()
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(
-                    self.model.parameters(),
+                    self.actor.parameters(),
                     self.wdb.get_hyperparameter("max_grad_norm"),
                 )
                 self.optimizer.step()
