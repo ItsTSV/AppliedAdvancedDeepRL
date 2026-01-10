@@ -13,16 +13,26 @@ from textual.widgets import (
     Button,
     RichLog
 )
+from textual.containers import VerticalScroll
 from textual.validation import Regex
 from src.utils.data_lab import generate_distribution_plot, generate_scatter_plot
 from src.shared.wandb_wrapper import WandbWrapper
 from src.shared.environment_manager import EnvironmentManager
 from src.ppo.agent_continuous import PPOAgentContinuous
 from src.sac.agent import SACAgent
+from src.td3.agent import TD3Agent
 
 
 class RlPlayground(App):
     """A Textual app to test RL agents"""
+    CSS = """
+        #debug_output {
+            height: 12;       
+            border: solid $primary;
+            margin-top: 1;
+            background: $surface;
+        }
+        """
 
     BINDINGS = [("d", "toggle_dark", "Toggle dark mode")]
 
@@ -46,48 +56,49 @@ class RlPlayground(App):
         # Header
         yield Header(show_clock=True)
 
-        # Configuration file selector
-        yield Markdown("# Select Configuration File")
-        with RadioSet(id="config_selector"):
-            for config_file_path in self.config_dir.glob("*.yaml"):
-                display_name = str(config_file_path.relative_to(self.project_root))
-                yield RadioButton(display_name)
+        with VerticalScroll():
+            # Configuration file selector
+            yield Markdown("# Select Configuration File")
+            with RadioSet(id="config_selector"):
+                for config_file_path in self.config_dir.glob("*.yaml"):
+                    display_name = str(config_file_path.relative_to(self.project_root))
+                    yield RadioButton(display_name)
 
-        # Model selector
-        yield Markdown("# Select Model File")
-        with RadioSet(id="model_selector"):
-            for model_file_path in self.models_dir.glob("*.pth"):
-                display_name = str(model_file_path.relative_to(self.project_root))
-                yield RadioButton(display_name)
-            yield RadioButton("RANDOM POLICY")
+            # Model selector
+            yield Markdown("# Select Model File")
+            with RadioSet(id="model_selector"):
+                for model_file_path in self.models_dir.glob("*.pth"):
+                    display_name = str(model_file_path.relative_to(self.project_root))
+                    yield RadioButton(display_name)
+                yield RadioButton("RANDOM POLICY")
 
-        # Render settings
-        yield Markdown("# Render Settings")
-        with RadioSet(id="render_selector"):
-            yield RadioButton("No Rendering")
-            yield RadioButton("Human Rendering")
-            yield RadioButton("Video Rendering")
+            # Render settings
+            yield Markdown("# Render Settings")
+            with RadioSet(id="render_selector"):
+                yield RadioButton("No Rendering")
+                yield RadioButton("Human Rendering")
+                yield RadioButton("Video Rendering")
 
-        # Trial runner
-        yield Markdown("# How many trials?")
-        yield Input(
-            placeholder="Enter number of trials",
-            id="trial_input",
-            validators=[
-                Regex(regex=r"^\d+$", failure_description="Must be a positive integer")
-            ],
-        )
+            # Trial runner
+            yield Markdown("# How many trials?")
+            yield Input(
+                placeholder="Enter number of trials",
+                id="trial_input",
+                validators=[
+                    Regex(regex=r"^\d+$", failure_description="Must be a positive integer")
+                ],
+            )
 
-        # Additional settings
-        yield Markdown("# Additional Settings")
-        yield Checkbox("Generate CSV Log", id="csv_log_checkbox")
-        yield Checkbox("Generate Chart Report", id="chart_report_checkbox")
+            # Additional settings
+            yield Markdown("# Additional Settings")
+            yield Checkbox("Generate CSV Log", id="csv_log_checkbox")
+            yield Checkbox("Generate Chart Report", id="chart_report_checkbox")
 
-        # Confirmation button
-        yield Button("Confirm and run", id="run_button", variant="primary")
+            # Confirmation button
+            yield Button("Confirm and run", id="run_button", variant="primary")
 
-        # Debug text area
-        yield RichLog(id="debug_output", markup=True, wrap=True)
+            # Debug text area
+            yield RichLog(id="debug_output", markup=True, wrap=True)
 
         # Footer
         yield Footer()
@@ -156,6 +167,8 @@ class RlPlayground(App):
             agent = PPOAgentContinuous(env, wdb)
         elif algorithm == "SAC":
             agent = SACAgent(env, wdb)
+        elif algorithm == "TD3":
+            agent = TD3Agent(env, wdb)
         else:
             raise ValueError(f"Unsupported algorithm: {algorithm}")
 

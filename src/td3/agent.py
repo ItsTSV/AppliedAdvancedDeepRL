@@ -274,3 +274,17 @@ class TD3Agent(TemplateAgent):
         # When done, save the best model to wandb and close
         self.save_artifact()
         self.wdb.finish()
+
+    def play(self):
+        """See the agent perform in selected environment."""
+        state = self.env.reset()
+        done = False
+        while not done:
+            state = torch.tensor(state).to(self.device).unsqueeze(0)
+            action = self.get_action(state, deterministic=False)
+            action = action.detach().cpu().numpy()[0]
+            state, reward, _, done, _ = self.env.step(action)
+            self.env.render()
+
+        steps, reward = self.env.get_episode_info()
+        return reward, steps
