@@ -22,28 +22,29 @@ class TD3Agent(TemplateAgent):
         """
         super().__init__(environment, wandb)
 
-        # Create models and memory based on env parameters
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         network_size = self.wdb.get_hyperparameter("network_size")
         action_count, state_count = self.env.get_dimensions()
 
-        # Actor
         self.actor = ActorNet(action_count, state_count, network_size).to(self.device)
 
-        # Q-Networks
         self.qnet1 = QNet(action_count, state_count, network_size).to(self.device)
         self.qnet2 = QNet(action_count, state_count, network_size).to(self.device)
 
-        # Target networks
-        self.actor_target = ActorNet(action_count, state_count, network_size).to(self.device)
-        self.qnet1_target = QNet(action_count, state_count, network_size).to(self.device)
-        self.qnet2_target = QNet(action_count, state_count, network_size).to(self.device)
+        self.actor_target = ActorNet(action_count, state_count, network_size).to(
+            self.device
+        )
+        self.qnet1_target = QNet(action_count, state_count, network_size).to(
+            self.device
+        )
+        self.qnet2_target = QNet(action_count, state_count, network_size).to(
+            self.device
+        )
 
         # Copy & lock weights
         self.actor_target.load_state_dict(self.actor.state_dict())
         self.qnet1_target.load_state_dict(self.qnet1.state_dict())
         self.qnet2_target.load_state_dict(self.qnet2.state_dict())
-
         for param in self.qnet1_target.parameters():
             param.requires_grad = False
         for param in self.qnet2_target.parameters():
@@ -51,11 +52,9 @@ class TD3Agent(TemplateAgent):
         for param in self.actor_target.parameters():
             param.requires_grad = False
 
-        # Memory
         memory_size = self.wdb.get_hyperparameter("memory_size")
         self.memory = ReplayBuffer(memory_size, action_count, state_count)
 
-        # Optimizers
         self.optimizer_actor = torch.optim.Adam(
             self.actor.parameters(),
             lr=self.wdb.get_hyperparameter("learning_rate_actor"),
@@ -81,11 +80,9 @@ class TD3Agent(TemplateAgent):
             if deterministic:
                 return action
 
-            # If not deterministic, generate noise
+            # If not deterministic, generate noise and add it to the action
             exploration_noise = self.wdb.get_hyperparameter("exploration_noise")
             noise = torch.randn_like(action) * exploration_noise
-
-            # Add it and clip the action
             action = action + noise
             action = action.clamp(-1.0, 1.0)
             return action
@@ -176,6 +173,7 @@ class TD3Agent(TemplateAgent):
         total_steps = 0
         max_steps = self.wdb.get_hyperparameter("total_steps")
         warmup_steps = self.wdb.get_hyperparameter("warmup_steps")
+        episode_steps = self.wdb.get_hyperparameter("episode_steps")
         policy_interval = self.wdb.get_hyperparameter("policy_interval")
         best_mean = float("-inf")
         save_interval = self.wdb.get_hyperparameter("save_interval")
@@ -184,11 +182,8 @@ class TD3Agent(TemplateAgent):
         while True:
             state = self.env.reset()
 
-            for _ in range(self.wdb.get_hyperparameter("episode_steps")):
-                # Update steps
+            for _ in range(episode_steps):
                 total_steps += 1
-
-                # Get action (from network -- needs to be detached and have its batch removed)
                 if total_steps < warmup_steps:
                     action = self.env.get_random_action()
                 else:
@@ -196,19 +191,15 @@ class TD3Agent(TemplateAgent):
                     action = self.get_action(state_tensor)
                     action = action.detach().cpu().numpy()[0]
 
-                # Advance the environment
                 next_state, reward, terminated, done, _ = self.env.step(action)
                 scaled_reward = reward / self.wdb.get_hyperparameter("reward_scale")
 
-                # Add to memory, adjust new state
                 self.memory.add(state, action, scaled_reward, next_state, terminated)
                 state = next_state
 
-                # If a warmup period is over, run Q-optimisation
                 if total_steps > warmup_steps:
                     q_loss, q1_loss, q2_loss = self.optimize_q_networks()
 
-                    # Delayed policy optimization
                     if total_steps % policy_interval == 0:
                         actor_loss = self.optimize_actor_network()
                         self.polyak_update(self.actor, self.actor_target)
@@ -218,7 +209,6 @@ class TD3Agent(TemplateAgent):
                         if total_steps % 100 == 0:
                             self.wdb.log({"Actor Loss": actor_loss})
 
-                    # Prevent wandb spam, log only occasionally
                     if total_steps % 100 == 0:
                         self.wdb.log(
                             {
@@ -229,17 +219,13 @@ class TD3Agent(TemplateAgent):
                             }
                         )
 
-                # If the episode is done, finish logging and model saving
                 if done:
-                    # Update episode & steps info
                     episode_steps, episode_reward = self.env.get_episode_info()
                     episode += 1
 
-                    # Calculate mean rewards in last episodes
                     reward_buffer.append(episode_reward)
                     mean = np.mean(reward_buffer)
 
-                    # Save model callback
                     if mean > best_mean:
                         best_mean = mean
                         self.save_model(self.actor)
@@ -247,7 +233,6 @@ class TD3Agent(TemplateAgent):
                             f"Episode {episode} -- saving model with new best mean reward: {mean}"
                         )
 
-                    # Sanity check report
                     if episode % 10 == 0:
                         print(
                             f"Episode {episode} finished in {episode_steps} steps with reward {episode_reward}. "
@@ -255,7 +240,6 @@ class TD3Agent(TemplateAgent):
                         )
                     break
 
-            # Log episode parameters
             episode_steps, episode_reward = self.env.get_episode_info()
             self.wdb.log(
                 {
@@ -266,12 +250,10 @@ class TD3Agent(TemplateAgent):
                 }
             )
 
-            # Terminate?
             if total_steps > max_steps:
                 print("The training has successfully finished!")
                 break
 
-        # When done, save the best model to wandb and close
         self.save_artifact()
         self.wdb.finish()
 

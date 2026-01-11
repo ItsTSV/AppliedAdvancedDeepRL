@@ -21,7 +21,6 @@ class PPOAgentBase(TemplateAgent, ABC):
         """
         super().__init__(environment, wandb)
 
-        # Training items
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.actor = model.to(self.device)
         self.memory = RolloutBuffer()
@@ -76,6 +75,7 @@ class PPOAgentBase(TemplateAgent, ABC):
         episode = 0
         total_steps = 0
         max_steps = self.wdb.get_hyperparameter("total_steps")
+        episode_steps = self.wdb.get_hyperparameter("episode_steps")
         best_mean = float("-inf")
         save_interval = self.wdb.get_hyperparameter("save_interval")
         reward_buffer = deque(maxlen=save_interval)
@@ -85,23 +85,17 @@ class PPOAgentBase(TemplateAgent, ABC):
         while True:
             state = self.env.reset()
 
-            for step in range(self.wdb.get_hyperparameter("episode_steps")):
-                # Update steps
+            for step in range(episode_steps):
                 total_steps += 1
 
-                # Get action from the model
                 action, log_prob, value = self.get_action(state)
-
-                # Advance the environment
                 new_state, reward, _, done, _ = self.env.step(action)
 
-                # Add step to memory, change state
                 rollout_size = self.memory.add(
                     state, action, log_prob, reward, value, done
                 )
                 state = new_state
 
-                # If the rollout length is achieved, optimise
                 if rollout_size == self.wdb.get_hyperparameter("rollout_length"):
                     value_loss, policy_loss = self.optimize_model(state)
                     value_loss_buffer.append(value_loss)
@@ -115,17 +109,13 @@ class PPOAgentBase(TemplateAgent, ABC):
                         }
                     )
 
-                # If the episode is done, break the loop and optionally print for sanity check
                 if done or step == self.wdb.get_hyperparameter("episode_steps") - 1:
-                    # Update episode & steps info
                     episode_steps, episode_reward = self.env.get_episode_info()
                     episode += 1
 
-                    # Calculate mean rewards in last episodes
                     reward_buffer.append(episode_reward)
                     mean = np.sum(reward_buffer) / save_interval
 
-                    # Save model callback
                     if mean > best_mean:
                         best_mean = mean
                         self.save_model(self.actor)
@@ -133,7 +123,6 @@ class PPOAgentBase(TemplateAgent, ABC):
                             f"Episode {episode} -- saving model with new best mean reward: {mean}"
                         )
 
-                    # Sanity check report
                     if episode % 10 == 0:
                         print(
                             f"Episode {episode} finished in {episode_steps} steps with reward {episode_reward}. "
@@ -141,7 +130,6 @@ class PPOAgentBase(TemplateAgent, ABC):
                         )
                     break
 
-            # Logging episode results
             episode_steps, episode_reward = self.env.get_episode_info()
             self.wdb.log(
                 {
@@ -152,12 +140,10 @@ class PPOAgentBase(TemplateAgent, ABC):
                 }
             )
 
-            # Terminate?
             if total_steps > max_steps:
                 print("The training has successfully finished!")
                 break
 
-        # When done, save the best model to wandb and close
         self.save_artifact()
         self.wdb.finish()
 

@@ -11,7 +11,7 @@ from textual.widgets import (
     Checkbox,
     Input,
     Button,
-    RichLog
+    RichLog,
 )
 from textual.containers import VerticalScroll
 from textual.validation import Regex
@@ -25,6 +25,7 @@ from src.td3.agent import TD3Agent
 
 class RlPlayground(App):
     """A Textual app to test RL agents"""
+
     CSS = """
         #debug_output {
             height: 12;       
@@ -53,7 +54,6 @@ class RlPlayground(App):
 
     def compose(self) -> ComposeResult:
         """Create child widgets for the app"""
-        # Header
         yield Header(show_clock=True)
 
         with VerticalScroll():
@@ -85,7 +85,9 @@ class RlPlayground(App):
                 placeholder="Enter number of trials",
                 id="trial_input",
                 validators=[
-                    Regex(regex=r"^\d+$", failure_description="Must be a positive integer")
+                    Regex(
+                        regex=r"^\d+$", failure_description="Must be a positive integer"
+                    )
                 ],
             )
 
@@ -94,23 +96,20 @@ class RlPlayground(App):
             yield Checkbox("Generate CSV Log", id="csv_log_checkbox")
             yield Checkbox("Generate Chart Report", id="chart_report_checkbox")
 
-            # Confirmation button
             yield Button("Confirm and run", id="run_button", variant="primary")
-
-            # Debug text area
             yield RichLog(id="debug_output", markup=True, wrap=True)
 
-        # Footer
         yield Footer()
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle button press event to run the trials"""
         if event.button.id == "run_button":
-            # Get number of trials
             trial_input = self.query_one("#trial_input", Input)
-            self.num_trials = int(trial_input.value) if trial_input.value and trial_input.is_valid else 1
-
-            # Run trials
+            self.num_trials = (
+                int(trial_input.value)
+                if trial_input.value and trial_input.is_valid
+                else 1
+            )
             self.run_worker(self.run_trials, exclusive=True, thread=True)
 
     def on_radio_set_changed(self, event: RadioSet.Changed) -> None:
@@ -139,24 +138,25 @@ class RlPlayground(App):
 
     def run_trials(self):
         """Run the specified number of trials with the selected configuration"""
-        # Clear debug output
         self.call_later(self.clear_log)
 
         # Validate selections
         if not all([self.config_path, self.model_path, self.render_mode]):
-            self.call_later(self.log_message,
-                            "[bold red]Error:[/bold red] Please make all selections before running trials.")
+            self.call_later(
+                self.log_message,
+                "[bold red]Error:[/bold red] Please make all selections before running trials.",
+            )
             return
 
-        # Write summary
         self.call_later(self.log_summary)
 
-        # Initialize WandbWrapper
         wdb = WandbWrapper(self.config_path, mode="disabled")
 
         # Initialize environment with correct settings
         name = wdb.get_hyperparameter("environment")
-        env = EnvironmentManager(name, "human" if self.render_mode == "Human Rendering" else "rgb_array")
+        env = EnvironmentManager(
+            name, "human" if self.render_mode == "Human Rendering" else "rgb_array"
+        )
         env.build_continuous()
         if self.render_mode == "Video Rendering":
             env.build_video_recorder()
@@ -172,29 +172,30 @@ class RlPlayground(App):
         else:
             raise ValueError(f"Unsupported algorithm: {algorithm}")
 
-        # Load model if not random policy
         if "RANDOM POLICY" not in self.model_path:
             try:
                 agent.load_model(agent.actor, self.model_path)
-            except:
-                self.call_later(self.log_message,
-                                "[bold red]Make sure the model is compactible with selected agent![/bold red]")
+            except RuntimeError:
+                self.call_later(
+                    self.log_message,
+                    "[bold red]Make sure the model is compactible with selected agent![/bold red]",
+                )
 
-        # Log stuff
-        df = pd.DataFrame({
-            "Trial": [],
-            "Reward": [],
-            "Steps": []
-        })
-
-        # Run trials
+        # Trial loop & logging
+        df = pd.DataFrame({"Trial": [], "Reward": [], "Steps": []})
         for i in range(self.num_trials):
             reward, steps = agent.play()
             df.loc[len(df)] = [i, reward, steps]
-            self.call_later(self.log_message, f"[bold yellow]Trial {i + 1} Reward:[/bold yellow] {reward}")
+            self.call_later(
+                self.log_message,
+                f"[bold yellow]Trial {i + 1} Reward:[/bold yellow] {reward}",
+            )
 
         average_reward = df["Reward"].mean()
-        self.call_later(self.log_message, f"[bold magenta]Average Reward:[/bold magenta] {average_reward}")
+        self.call_later(
+            self.log_message,
+            f"[bold magenta]Average Reward:[/bold magenta] {average_reward}",
+        )
 
         # Generate charts / save to csv
         output_dir = self.project_root / "outputs"
@@ -209,10 +210,8 @@ class RlPlayground(App):
             csv_path = str(output_dir / f"{tmp_name}_run.csv")
             df.to_csv(csv_path)
 
-        # Finish writeup
         self.call_later(self.log_message, "[bold blue]Trials finished[/bold blue]")
 
-        # Clean
         env.close()
         wdb.finish()
 
@@ -220,12 +219,20 @@ class RlPlayground(App):
         """Thread-safe method for writing trial summary"""
         debug_output = self.query_one(RichLog)
         debug_output.clear()
-        debug_output.write(f"[bold green]Configuration File:[/bold green] {self.config_path}")
+        debug_output.write(
+            f"[bold green]Configuration File:[/bold green] {self.config_path}"
+        )
         debug_output.write(f"[bold green]Model File:[/bold green] {self.model_path}")
         debug_output.write(f"[bold green]Render Mode:[/bold green] {self.render_mode}")
-        debug_output.write(f"[bold green]Number of Trials:[/bold green] {self.num_trials}")
-        debug_output.write(f"[bold green]Generate CSV Log:[/bold green] {self.generate_csv_log}")
-        debug_output.write(f"[bold green]Generate Chart Report:[/bold green] {self.generate_chart_report}")
+        debug_output.write(
+            f"[bold green]Number of Trials:[/bold green] {self.num_trials}"
+        )
+        debug_output.write(
+            f"[bold green]Generate CSV Log:[/bold green] {self.generate_csv_log}"
+        )
+        debug_output.write(
+            f"[bold green]Generate Chart Report:[/bold green] {self.generate_chart_report}"
+        )
         debug_output.write("[bold blue]Running trials...[/bold blue]")
 
     def log_message(self, text: str):

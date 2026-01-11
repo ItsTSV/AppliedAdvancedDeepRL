@@ -5,8 +5,7 @@ import numpy as np
 
 class EnvironmentManager:
     """Provides a manager that builds gymnasium environment and handles
-    interaction and data processing
-    """
+    interaction and data processing."""
 
     def __init__(self, name: str, render_mode: str):
         """Initializes Gymnasium environment and info about it

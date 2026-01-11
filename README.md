@@ -46,6 +46,8 @@ Format source code: ```black src```
 
 Run linter: ```pylint src```
 
+![Pylint Score](https://raw.githubusercontent.com/<ItsTSV>/<AppliedAdvancedDeepRL>/badges/pylint.svg)
+
 ### Random gifs
 ... because looking at images is more interesting than reading text.
 

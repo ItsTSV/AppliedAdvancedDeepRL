@@ -21,12 +21,10 @@ class PPOAgentContinuous(PPOAgentBase):
         environment: EnvironmentManager,
         wandb: WandbWrapper,
     ):
-        # Create model
         network_size = wandb.get_hyperparameter("network_size")
         action_space, observation_space = environment.get_dimensions()
         model = ContinuousActorCriticNet(action_space, observation_space, network_size)
 
-        # Initialize base class
         super().__init__(environment, wandb, model)
 
         # Create optimiser with different learning rates for actor and critic
@@ -88,7 +86,6 @@ class PPOAgentContinuous(PPOAgentBase):
         Returns:
             tuple: A tuple containing the total policy loss and value loss.
         """
-        # Prepare rollout data
         states, actions, log_probs, rewards, values, dones = self.memory.get_tensors()
 
         # Compute next value from final state
@@ -110,7 +107,6 @@ class PPOAgentContinuous(PPOAgentBase):
         batch_size = self.wdb.get_hyperparameter("batch_size")
         clip_eps = self.wdb.get_hyperparameter("clip_epsilon")
 
-        # Stats
         total_policy_loss = 0.0
         total_value_loss = 0.0
         update_count = 0
@@ -121,8 +117,7 @@ class PPOAgentContinuous(PPOAgentBase):
             indices = torch.randperm(len(states))
 
             for i in range(0, len(indices), batch_size):
-                # Create batches
-                batch_indices = indices[i:i + batch_size]
+                batch_indices = indices[i : i + batch_size]
                 batch_states = states[batch_indices]
                 batch_actions = actions[batch_indices]
                 batch_log_probs = log_probs[batch_indices]
