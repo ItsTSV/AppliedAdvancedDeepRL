@@ -35,13 +35,16 @@ Training: ```python -m src.main```
 
 Testing: ```python -m src.playground```
 
-### Commands
-To ensure compactibility of all libraries (mainly torch and its components: torchrl, torchvision etc...), requirements.txt
-are used. For formatting and linting, black and pylint are used. Black sometimes loves to produce a bit weird looking code,
-but it is a standard in Python ecosystem, so the code looks weird pretty much everywhere ;) The code quality is checked
-with every commit using GitHub Actions.
+### Dependencies
+The code is written in Python 3.11. All major dependencies are listed in requirements.txt. They can be installed
+via this command:
 
 Install all dependencies: ```pip install -r requirements.txt```
+
+### Code quality
+For formatting and linting, black and pylint are used. Black sometimes loves to produce a bit weird looking code,
+but it is a standard in Python ecosystem, so the code looks weird pretty much everywhere ;) The code quality is checked
+with every commit using GitHub Actions.
 
 Format source code: ```black src```
 
