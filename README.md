@@ -38,15 +38,14 @@ Testing: ```python -m src.playground```
 ### Commands
 To ensure compactibility of all libraries (mainly torch and its components: torchrl, torchvision etc...), requirements.txt
 are used. For formatting and linting, black and pylint are used. Black sometimes loves to produce a bit weird looking code,
-but it is a standard in Python ecosystem, so the code looks weird pretty much everywhere ;)
+but it is a standard in Python ecosystem, so the code looks weird pretty much everywhere ;) The code quality is checked
+with every commit using GitHub Actions.
 
 Install all dependencies: ```pip install -r requirements.txt```
 
 Format source code: ```black src```
 
 Run linter: ```pylint src```
-
-![Pylint Score](https://raw.githubusercontent.com/<ItsTSV>/<AppliedAdvancedDeepRL>/badges/pylint.svg)
 
 ### Random gifs
 ... because looking at images is more interesting than reading text.
