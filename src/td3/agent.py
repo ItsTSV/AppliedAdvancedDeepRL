@@ -173,7 +173,7 @@ class TD3Agent(TemplateAgent):
         total_steps = 0
         max_steps = self.wdb.get_hyperparameter("total_steps")
         warmup_steps = self.wdb.get_hyperparameter("warmup_steps")
-        episode_steps = self.wdb.get_hyperparameter("episode_steps")
+        hyperp_episode_steps = self.wdb.get_hyperparameter("episode_steps")
         policy_interval = self.wdb.get_hyperparameter("policy_interval")
         best_mean = float("-inf")
         save_interval = self.wdb.get_hyperparameter("save_interval")
@@ -182,7 +182,7 @@ class TD3Agent(TemplateAgent):
         while True:
             state = self.env.reset()
 
-            for _ in range(episode_steps):
+            for _ in range(hyperp_episode_steps):
                 total_steps += 1
                 if total_steps < warmup_steps:
                     action = self.env.get_random_action()

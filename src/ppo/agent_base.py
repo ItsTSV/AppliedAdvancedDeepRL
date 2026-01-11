@@ -75,7 +75,7 @@ class PPOAgentBase(TemplateAgent, ABC):
         episode = 0
         total_steps = 0
         max_steps = self.wdb.get_hyperparameter("total_steps")
-        episode_steps = self.wdb.get_hyperparameter("episode_steps")
+        hyperp_episode_steps = self.wdb.get_hyperparameter("episode_steps")
         best_mean = float("-inf")
         save_interval = self.wdb.get_hyperparameter("save_interval")
         reward_buffer = deque(maxlen=save_interval)
@@ -85,7 +85,7 @@ class PPOAgentBase(TemplateAgent, ABC):
         while True:
             state = self.env.reset()
 
-            for step in range(episode_steps):
+            for step in range(hyperp_episode_steps):
                 total_steps += 1
 
                 action, log_prob, value = self.get_action(state)
@@ -109,7 +109,7 @@ class PPOAgentBase(TemplateAgent, ABC):
                         }
                     )
 
-                if done or step == self.wdb.get_hyperparameter("episode_steps") - 1:
+                if done or step == hyperp_episode_steps - 1:
                     episode_steps, episode_reward = self.env.get_episode_info()
                     episode += 1
 
