@@ -41,6 +41,9 @@ via this command:
 
 Install all dependencies: ```pip install -r requirements.txt```
 
+Note: One of the dependencies is CUDA-enabled PyTorch. Requirements list version that works with CUDA 12.8.
+If you have different version, you will have to install PyTorch manually.
+
 ### Code quality
 For formatting and linting, black and pylint are used. Black sometimes loves to produce a bit weird looking code,
 but it is a standard in Python ecosystem, so the code looks weird pretty much everywhere ;) The code quality is checked
