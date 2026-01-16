@@ -219,7 +219,7 @@ class SACAgent(TemplateAgent):
                     action = action.detach().cpu().numpy()[0]
 
                 next_state, reward, terminated, done, _ = self.env.step(action)
-                scaled_reward = reward / self.wdb.get_hyperparameter("reward_scale")
+                scaled_reward = reward * self.wdb.get_hyperparameter("reward_scale")
 
                 self.memory.add(state, action, scaled_reward, next_state, terminated)
                 state = next_state

@@ -5,32 +5,30 @@
 #
 # The second part (config) is used to change hyperparameter settings of agents.
 # Changing it adjusts the way agents behave and learn.
-project: "HalfCheetah-v5"
-name: "TD3"
+project: "Swimmer-v5"
+name: "SAC"
 dir: "logs"
-notes: "Training HalfCheetah-v5 using TD3"
+notes: "Training Swimmer-v5 using SAC"
 monitor_gym: "False"
 config:
   # Environment, logging and saving control
-  environment: "HalfCheetah-v5"             # Environment to use
-  algorithm: "TD3"                          # What kind of algorithm to use?
+  environment: "Swimmer-v5"                 # Environment to use
+  algorithm: "SAC"                          # What kind of algorithm to use?
   save_dir: "models"                        # Where to save model?
-  save_name: "td3_half_cheetah"             # Model name
+  save_name: "sac_half_cheetah"             # Model name
   save_interval: 50                         # How many previous episodes will be used to calculate mean reward?
   total_steps: 1_000_000                    # For how many steps will the agent train?
   episode_steps: 1250                       # How many steps before the episode is terminated?
   # Algorithm hyperparameters
   memory_size: 1000000                      # How many steps can fit into the memory?
-  learning_rate_q: 0.001                    # Learning rate for Q-Network
-  learning_rate_actor: 0.001                # Learning rate for Actor network
+  learning_rate_q: 0.0002                   # Learning rate for Q-Network
+  learning_rate_actor: 0.0003               # Learning rate for Actor network
   tau: 0.005                                # Interpolation factor in target network updates
   warmup_steps: 10_000                      # How many steps before agents starts optimising?
+  log_std_min: -20                          # Std normalisation lower bound
+  log_std_max: 2                            # Std normalisation upper bound
   batch_size: 256                           # How many steps are sampled from memory when optimising?
-  gamma: 0.99                               # Discount factor
-  exploration_noise: 0.1                    # Noise that is added to actor during action selection
-  policy_noise: 0.2                         # Noise that is added to actor during network optimization
-  noise_clip: 0.5                           # Min/Max noise value
-  policy_interval: 2                        # How often will the actor and target networks be updated?
+  gamma: 0.9999                             # Discount factor
   network_size: 256                         # Number of neurons in each hidden layer
   max_grad_norm: 1.0                        # Gradient clipping constant to prevent grad explosion
-  reward_scale: 1.0                         # Used for reward scaling
+  reward_scale: 50.0                        # Rewards need to be scaled for entropy temperature

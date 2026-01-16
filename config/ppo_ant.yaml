@@ -5,30 +5,30 @@
 #
 # The second part (config) is used to change hyperparameter settings of agents.
 # Changing it adjusts the way agents behave and learn.
-project: "Walker2d-v5"
+project: "Ant-v5"
 name: "PPO"
 dir: "logs"
-notes: "Training Walker2d-v5 using PPO"
+notes: "Training Ant-v5 using PPO"
 monitor_gym: "False"
 config:
   # Environment, logging and saving control
-  environment: "Walker2d-v5"                # Environment to use
+  environment: "Ant-v5"                     # Environment to use
   algorithm: "PPO Continuous"               # What kind of algorithm to use?
   save_dir: "models"                        # Where to save model?
-  save_name: "ppo_walker2d"                 # Model name
+  save_name: "ppo_ant"                      # Model name
   save_interval: 50                         # How many previous episodes will be used to calculate mean reward?
   total_steps: 1_000_000                    # For how many steps will the agent train?
   episode_steps: 1250                       # How many steps before the episode is terminated?
   # Algorithm hyperparameters
   gamma: 0.99                               # Discount factor for future rewards
-  lambda: 0.97                              # GAE tradeoff parameter
+  lambda: 0.95                              # GAE tradeoff parameter
   ppo_epochs: 8                             # How many epochs to train on each batch?
-  rollout_length: 512                       # How many steps to collect before updating?
-  batch_size: 32                            # How many steps are in each batch?
+  rollout_length: 2048                      # How many steps to collect before updating?
+  batch_size: 64                            # How many steps are in each batch?
   clip_epsilon: 0.2                         # How much is the policy clipped?
-  learning_rate_actor: 0.0001               # Learning rate for actor head
-  learning_rate_critic: 0.0001              # Learning rate for critic head
-  value_loss_coef: 0.7                      # How much is the value loss weighted?
+  learning_rate_actor: 0.0003               # Learning rate for actor head
+  learning_rate_critic: 0.0003              # Learning rate for critic head
+  value_loss_coef: 0.8                      # How much is the value loss weighted?
   entropy_coef: 0.0025                      # How much is the entropy loss weighted?
   max_grad_norm: 0.5                        # Maximum norm for gradient clipping
   network_size: 256                         # Number of neurons in each hidden layer

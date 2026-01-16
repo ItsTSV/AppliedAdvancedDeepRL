@@ -5,17 +5,17 @@
 #
 # The second part (config) is used to change hyperparameter settings of agents.
 # Changing it adjusts the way agents behave and learn.
-project: "HalfCheetah-v5"
+project: "Hopper-v5"
 name: "TD3"
 dir: "logs"
-notes: "Training HalfCheetah-v5 using TD3"
+notes: "Training Hopper-v5 using TD3"
 monitor_gym: "False"
 config:
   # Environment, logging and saving control
-  environment: "HalfCheetah-v5"             # Environment to use
+  environment: "Hopper-v5"                  # Environment to use
   algorithm: "TD3"                          # What kind of algorithm to use?
   save_dir: "models"                        # Where to save model?
-  save_name: "td3_half_cheetah"             # Model name
+  save_name: "td3_hopper"                   # Model name
   save_interval: 50                         # How many previous episodes will be used to calculate mean reward?
   total_steps: 1_000_000                    # For how many steps will the agent train?
   episode_steps: 1250                       # How many steps before the episode is terminated?
