@@ -8,6 +8,7 @@ from src.shared.wandb_wrapper import WandbWrapper
 from src.shared.agent_template import TemplateAgent
 from .models import QNet, ActorNet
 from src.shared.replay_buffer import ReplayBuffer
+from itertools import count
 
 
 class SACAgent(TemplateAgent):
@@ -200,7 +201,6 @@ class SACAgent(TemplateAgent):
         total_steps = 0
         max_steps = self.wdb.get_hyperparameter("total_steps")
         warmup_steps = self.wdb.get_hyperparameter("warmup_steps")
-        hyperp_episode_steps = self.wdb.get_hyperparameter("episode_steps")
         save_interval = self.wdb.get_hyperparameter("save_interval")
         policy_update_frequency = self.wdb.get_hyperparameter("policy_update_frequency")
         reward_buffer = deque(maxlen=save_interval)
@@ -209,7 +209,7 @@ class SACAgent(TemplateAgent):
         while True:
             state = self.env.reset()
 
-            for _ in range(hyperp_episode_steps):
+            for _ in count(1):
                 total_steps += 1
 
                 if total_steps < warmup_steps:

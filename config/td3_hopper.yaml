@@ -18,7 +18,6 @@ config:
   save_name: "td3_hopper"                   # Model name
   save_interval: 50                         # How many previous episodes will be used to calculate mean reward?
   total_steps: 1_000_000                    # For how many steps will the agent train?
-  episode_steps: 1250                       # How many steps before the episode is terminated?
   # Algorithm hyperparameters
   memory_size: 1000000                      # How many steps can fit into the memory?
   learning_rate_q: 0.001                    # Learning rate for Q-Network

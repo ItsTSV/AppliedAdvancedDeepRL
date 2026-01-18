@@ -6,6 +6,7 @@ from src.shared.environment_manager import EnvironmentManager
 from src.shared.wandb_wrapper import WandbWrapper
 from src.shared.agent_template import TemplateAgent
 from src.shared.rollout_buffer import RolloutBuffer
+from itertools import count
 
 
 class PPOAgentBase(TemplateAgent, ABC):
@@ -75,7 +76,6 @@ class PPOAgentBase(TemplateAgent, ABC):
         episode = 0
         total_steps = 0
         max_steps = self.wdb.get_hyperparameter("total_steps")
-        hyperp_episode_steps = self.wdb.get_hyperparameter("episode_steps")
         best_mean = float("-inf")
         save_interval = self.wdb.get_hyperparameter("save_interval")
         reward_buffer = deque(maxlen=save_interval)
@@ -85,7 +85,7 @@ class PPOAgentBase(TemplateAgent, ABC):
         while True:
             state = self.env.reset()
 
-            for step in range(hyperp_episode_steps):
+            for step in count(1):
                 total_steps += 1
 
                 action, log_prob, value = self.get_action(state)
@@ -109,7 +109,7 @@ class PPOAgentBase(TemplateAgent, ABC):
                         }
                     )
 
-                if done or step == hyperp_episode_steps - 1:
+                if done:
                     episode_steps, episode_reward = self.env.get_episode_info()
                     episode += 1
 

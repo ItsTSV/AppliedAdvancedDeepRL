@@ -18,7 +18,6 @@ config:
   save_name: "ppo_swimmer"                  # Model name
   save_interval: 25                         # How many previous episodes will be used to calculate mean reward?
   total_steps: 500_000                      # For how many steps will the agent train?
-  episode_steps: 1250                       # How many steps before the episode is terminated?
   # Algorithm hyperparameters
   gamma: 0.999                              # Discount factor for future rewards
   lambda: 0.98                              # GAE tradeoff parameter

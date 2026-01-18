@@ -17,17 +17,21 @@ class EnvironmentManager:
         self.env = gym.make(name, render_mode=render_mode)
         self.episode_steps = 0
         self.episode_reward = 0
-        self.norm_wrapper = None
+        self.observation_norm_wrapper = None
 
     def build_continuous(self):
         """Wraps itself in wrappers that are used for environments with continuous action space.
 
         Clip actions -- normalises the input action to [-1, 1] range.
         Normalize Observation -- normalises observations to have mean 0 and variance 1.
+        Record Episode Statistics -- records episode reward and length in info dict.
+        Normalize Reward -- normalises rewards to have mean 0 and variance 1.
         """
         self.env = wrappers.ClipAction(self.env)
         self.env = wrappers.NormalizeObservation(self.env)
-        self.norm_wrapper = self.env
+        self.observation_norm_wrapper = self.env
+        self.env = wrappers.RecordEpisodeStatistics(self.env)
+        self.env = wrappers.NormalizeReward(self.env)
 
     def build_video_recorder(self, video_folder: str = "outputs/", fps: int = 120):
         """Wraps itself in a video recorder wrapper.
@@ -49,11 +53,11 @@ class EnvironmentManager:
         Args:
             path (str): The file path where the normalization parameters will be saved.
         """
-        if self.norm_wrapper is None:
+        if self.observation_norm_wrapper is None:
             raise ValueError(
                 "Normalization wrapper not found. Ensure build_continuous() has been called."
             )
-        rms = self.norm_wrapper.obs_rms
+        rms = self.observation_norm_wrapper.obs_rms
         np.savez(path, mean=rms.mean, var=rms.var, count=rms.count)
 
     def load_normalization_parameters(self, path):
@@ -62,13 +66,13 @@ class EnvironmentManager:
         Args:
             path (str): The file path from which the normalization parameters will be loaded.
         """
-        if self.norm_wrapper is None:
+        if self.observation_norm_wrapper is None:
             raise ValueError(
                 "Normalization wrapper not found. Ensure build_continuous() has been called."
             )
         print("Loaded!")
         data = np.load(path)
-        rms = self.norm_wrapper.obs_rms
+        rms = self.observation_norm_wrapper.obs_rms
         rms.mean = data["mean"]
         rms.var = data["var"]
         rms.count = data["count"]
@@ -96,12 +100,14 @@ class EnvironmentManager:
             New observation, reward acquired by performing action,
             termination info, additional env data
         """
-        state, episode_reward, terminated, truncated, info = self.env.step(action)
+        state, reward, terminated, truncated, info = self.env.step(action)
         finished = terminated or truncated
 
         self.episode_steps += 1
-        self.episode_reward += episode_reward
-        return state, episode_reward, terminated, finished, info
+        if "episode" in info:
+            self.episode_reward = info["episode"]["r"]
+
+        return state, reward, terminated, finished, info
 
     def reset(self) -> np.ndarray:
         """Resets the environment, returns a new state"""

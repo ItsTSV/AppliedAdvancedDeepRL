@@ -8,6 +8,7 @@ from src.shared.wandb_wrapper import WandbWrapper
 from src.shared.agent_template import TemplateAgent
 from .models import QNet, ActorNet
 from src.shared.replay_buffer import ReplayBuffer
+from itertools import count
 
 
 class TD3Agent(TemplateAgent):
@@ -173,7 +174,6 @@ class TD3Agent(TemplateAgent):
         total_steps = 0
         max_steps = self.wdb.get_hyperparameter("total_steps")
         warmup_steps = self.wdb.get_hyperparameter("warmup_steps")
-        hyperp_episode_steps = self.wdb.get_hyperparameter("episode_steps")
         policy_interval = self.wdb.get_hyperparameter("policy_interval")
         best_mean = float("-inf")
         save_interval = self.wdb.get_hyperparameter("save_interval")
@@ -182,7 +182,7 @@ class TD3Agent(TemplateAgent):
         while True:
             state = self.env.reset()
 
-            for _ in range(hyperp_episode_steps):
+            for _ in count(1):
                 total_steps += 1
                 if total_steps < warmup_steps:
                     action = self.env.get_random_action()
