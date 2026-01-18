@@ -17,6 +17,9 @@ class TemplateAgent:
         """
         self.env = environment
         self.wdb = wandb
+        if self.wdb.get_hyperparameter("normalize_rewards"):
+            print("Applying reward normalization!")
+            self.env.build_reward_normalization()
 
         current_path = Path(__file__).resolve()
         self.project_root = current_path.parent.parent.parent

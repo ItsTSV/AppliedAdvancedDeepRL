@@ -32,3 +32,4 @@ config:
   max_grad_norm: 1.0                        # Gradient clipping constant to prevent grad explosion
   reward_scale: 1.0                        # Rewards need to be scaled for entropy temperature
   policy_update_frequency: 2                # How often will the policy be updated?
+  normalize_rewards: 0                      # Whether to normalize rewards or not (1 = True, 0 = False)

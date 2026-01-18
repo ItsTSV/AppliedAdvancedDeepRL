@@ -18,20 +18,27 @@ class EnvironmentManager:
         self.episode_steps = 0
         self.episode_reward = 0
         self.observation_norm_wrapper = None
+        self.normalize_rewards = False
 
     def build_continuous(self):
         """Wraps itself in wrappers that are used for environments with continuous action space.
 
         Clip actions -- normalises the input action to [-1, 1] range.
         Normalize Observation -- normalises observations to have mean 0 and variance 1.
-        Record Episode Statistics -- records episode reward and length in info dict.
-        Normalize Reward -- normalises rewards to have mean 0 and variance 1.
         """
         self.env = wrappers.ClipAction(self.env)
         self.env = wrappers.NormalizeObservation(self.env)
         self.observation_norm_wrapper = self.env
+
+    def build_reward_normalization(self):
+        """Wraps itself in wrappers that normalizes rewards and records episode statistics.
+
+        RecordEpisodeStatistics -- records episode length and total reward in 'info' dict.
+        NormalizeReward -- normalizes rewards to have mean 0 and variance 1.
+        """
         self.env = wrappers.RecordEpisodeStatistics(self.env)
         self.env = wrappers.NormalizeReward(self.env)
+        self.normalize_rewards = True
 
     def build_video_recorder(self, video_folder: str = "outputs/", fps: int = 120):
         """Wraps itself in a video recorder wrapper.
@@ -104,8 +111,11 @@ class EnvironmentManager:
         finished = terminated or truncated
 
         self.episode_steps += 1
-        if "episode" in info:
-            self.episode_reward = info["episode"]["r"]
+        if self.normalize_rewards:
+            if "episode" in info:
+                self.episode_reward = info["episode"]["r"],
+        else:
+            self.episode_reward += reward
 
         return state, reward, terminated, finished, info
 
