@@ -20,10 +20,10 @@ config:
   total_steps: 1_000_000                    # For how many steps will the agent train?
   episode_steps: 1250                       # How many steps before the episode is terminated?
   # Algorithm hyperparameters
-  memory_size: 1000000                      # How many steps can fit into the memory?
-  learning_rate_q: 0.0001                   # Learning rate for Q-Network
+  memory_size: 1_000_000                    # How many steps can fit into the memory?
+  learning_rate_q: 0.001                    # Learning rate for Q-Network
   learning_rate_actor: 0.0003               # Learning rate for Actor network
-  tau: 0.001                                # Interpolation factor in target network updates
+  tau: 0.005                                # Interpolation factor in target network updates
   warmup_steps: 10_000                      # How many steps before agents starts optimising?
   log_std_min: -20                          # Std normalisation lower bound
   log_std_max: 2                            # Std normalisation upper bound
@@ -32,3 +32,4 @@ config:
   network_size: 256                         # Number of neurons in each hidden layer
   max_grad_norm: 1.0                        # Gradient clipping constant to prevent grad explosion
   reward_scale: 1.0                         # Rewards need to be scaled for entropy temperature
+  policy_update_frequency: 2                # How often will the policy be updated?

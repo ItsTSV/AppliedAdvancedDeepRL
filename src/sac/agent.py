@@ -201,9 +201,10 @@ class SACAgent(TemplateAgent):
         max_steps = self.wdb.get_hyperparameter("total_steps")
         warmup_steps = self.wdb.get_hyperparameter("warmup_steps")
         hyperp_episode_steps = self.wdb.get_hyperparameter("episode_steps")
-        best_mean = float("-inf")
         save_interval = self.wdb.get_hyperparameter("save_interval")
+        policy_update_frequency = self.wdb.get_hyperparameter("policy_update_frequency")
         reward_buffer = deque(maxlen=save_interval)
+        best_mean = float("-inf")
 
         while True:
             state = self.env.reset()
@@ -226,9 +227,13 @@ class SACAgent(TemplateAgent):
 
                 if total_steps > warmup_steps:
                     q_loss, q1_loss, q2_loss = self.optimize_q_networks()
-                    actor_loss, alpha_loss, alpha = self.optimize_actor_network()
                     self.polyak_update(self.qnet1, self.qnet1_target)
                     self.polyak_update(self.qnet2, self.qnet2_target)
+
+                    # Burst update -> "Hack" to improve performance
+                    if total_steps % policy_update_frequency == 0:
+                        for _ in range(policy_update_frequency):
+                            actor_loss, alpha_loss, alpha = self.optimize_actor_network()
 
                     if total_steps % 100 == 0:
                         self.wdb.log(
