@@ -192,9 +192,14 @@ class RlPlayground(App):
             )
 
         average_reward = df["Reward"].mean()
+        std_reward = df["Reward"].std()
         self.call_later(
             self.log_message,
             f"[bold magenta]Average Reward:[/bold magenta] {average_reward}",
+        )
+        self.call_later(
+            self.log_message,
+            f"[bold magenta]Reward Standard Deviation:[/bold magenta] {std_reward}",
         )
 
         # Generate charts / save to csv

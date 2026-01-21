@@ -55,8 +55,15 @@ Format source code: ```black src```
 
 Run linter: ```pylint src```
 
-### Random gifs
-... because looking at images is more interesting than reading text.
+### Benchmark Results
+The trained models were evaluated on 100 trials; the table shows mean and std values.
+
+| Environment |      PPO      | SAC | TD3 |
+| :--- |:-------------:| :---: | :---: |
+| **Swimmer-v5** |  345 +- 3.0   | TBD | TBD |
+| **Hopper-v5** | 2530 +- 262.9 | TBD | TBD |
+| **HalfCheetah-v5** | 3031 +- 594.4 | TBD | TBD |
+| **Ant-v5** |      TBD      | TBD | TBD |
 
 ### Random gifs
 ... because looking at images is more interesting than reading text.
