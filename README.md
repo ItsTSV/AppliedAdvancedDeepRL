@@ -31,15 +31,17 @@ private.
 ### Training and testing agents
 Both scripts must be run from Root Directory -- if they are not, the paths and imports might be broken.
 
-Training: ```python -m src.main```
+Training: ```python -m src.main --config <config path>```
 
 Testing: ```python -m src.playground```
+
+Benchmarking against StableBaselines3: ```python -m src.benchmark --env <environment> --alg <algorithm>```
 
 ### Dependencies
 The code is written in Python 3.11. All major dependencies are listed in requirements.txt. They can be installed
 via this command:
 
-Install all dependencies: ```pip install -r requirements.txt```
+```pip install -r requirements.txt```
 
 Note: One of the dependencies is CUDA-enabled PyTorch. Requirements list version that works with CUDA 12.8.
 If you have different version, you will have to install PyTorch manually.
@@ -56,8 +58,9 @@ Run linter: ```pylint src```
 ### Random gifs
 ... because looking at images is more interesting than reading text.
 
-![Hopper-v5 trained with PPO](outputs/hopper.gif)
+### Random gifs
+... because looking at images is more interesting than reading text.
 
-![Swimmer-v5 trained with PPO](outputs/swimmer.gif)
-
-![HalfCheetah-v5 trained with PPO](outputs/half_cheetah.gif)
+| Hopper-v5  |           Swimmer-v5            |             HalfCheetah-v5               |
+| :---: |:-------------------------------:|:----------------------------------------:|
+| ![Hopper](outputs/hopper.gif) | ![Swimmer](outputs/swimmer.gif) | ![HalfCheetah](outputs/half_cheetah.gif) |

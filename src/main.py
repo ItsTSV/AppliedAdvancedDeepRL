@@ -1,4 +1,4 @@
-from src.utils.arg_handler import get_args
+from src.utils.arg_handler import get_training_args
 from src.shared.wandb_wrapper import WandbWrapper
 from src.shared.environment_manager import EnvironmentManager
 from src.ppo.agent_continuous import PPOAgentContinuous
@@ -7,7 +7,7 @@ from src.td3.agent import TD3Agent
 
 
 if __name__ == "__main__":
-    args = get_args()
+    args = get_training_args()
 
     wdb = WandbWrapper(args.config, args.log)
 
