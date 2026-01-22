@@ -32,3 +32,4 @@ config:
   max_grad_norm: 0.5                        # Maximum norm for gradient clipping
   network_size: 256                         # Number of neurons in each hidden layer
   normalize_rewards: 0                      # Whether to normalize rewards or not (1 = True, 0 = False)
+  init_method: "default"                    # How will be the neural networks initialized?

@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+from src.shared.weight_initializer import init_layer
 
 
 class DiscreteActorCriticNet(nn.Module):
@@ -10,20 +11,20 @@ class DiscreteActorCriticNet(nn.Module):
     where convolutional layers will be needed.
     """
 
-    def __init__(self, action_space_size: int, state_space_size: int, network_size: int):
+    def __init__(self, action_space_size: int, state_space_size: int, network_size: int, init_method: str):
         super().__init__()
         self.network = nn.Sequential(
-            nn.Linear(state_space_size, network_size),
+            init_layer(nn.Linear(state_space_size, network_size), method=init_method, gain=5/3),
             nn.Tanh(),
-            nn.Linear(network_size, network_size),
+            init_layer(nn.Linear(network_size, network_size), method=init_method, gain=5/3),
             nn.Tanh(),
-            nn.Linear(network_size, network_size),
+            init_layer(nn.Linear(network_size, network_size), method=init_method, gain=5/3),
             nn.Tanh(),
         )
-        self.actor_head = nn.Linear(network_size, action_space_size)
-        self.critic_head = nn.Linear(network_size, 1)
+        self.actor_head = init_layer(nn.Linear(network_size, action_space_size), method=init_method, gain=0.01)
+        self.critic_head = init_layer(nn.Linear(network_size, 1), method=init_method, gain=1.0)
 
-    def forward(self, x: torch.tensor) -> tuple:
+    def forward(self, x: torch.Tensor) -> tuple:
         """Forward pass through the network.
 
         Args:
@@ -43,31 +44,31 @@ class ContinuousActorCriticNet(nn.Module):
     parameters, but allows agent to train more efficiently.
     """
 
-    def __init__(self, action_space_size: int, state_space_size: int, network_size: int):
+    def __init__(self, action_space_size: int, state_space_size: int, network_size: int, init_method: str):
         super().__init__()
         self.actor = nn.Sequential(
-            nn.Linear(state_space_size, network_size),
+            init_layer(nn.Linear(state_space_size, network_size), method=init_method, gain=5/3),
             nn.Tanh(),
-            nn.Linear(network_size, network_size),
+            init_layer(nn.Linear(network_size, network_size), method=init_method, gain=5/3),
             nn.Tanh(),
-            nn.Linear(network_size, network_size),
+            init_layer(nn.Linear(network_size, network_size), method=init_method, gain=5/3),
             nn.Tanh(),
-            nn.Linear(network_size, action_space_size),
+            init_layer(nn.Linear(network_size, action_space_size), method=init_method, gain=0.01),
         )
 
         self.actor_log_st = nn.Parameter(torch.zeros(action_space_size))
 
         self.critic = nn.Sequential(
-            nn.Linear(state_space_size, network_size),
+            init_layer(nn.Linear(state_space_size, network_size), method=init_method, gain=5/3),
             nn.Tanh(),
-            nn.Linear(network_size, network_size),
+            init_layer(nn.Linear(network_size, network_size), method=init_method, gain=5/3),
             nn.Tanh(),
-            nn.Linear(network_size, network_size),
+            init_layer(nn.Linear(network_size, network_size), method=init_method, gain=5/3),
             nn.Tanh(),
-            nn.Linear(network_size, 1),
+            init_layer(nn.Linear(network_size, 1), method=init_method, gain=1.0),
         )
 
-    def forward(self, x: torch.tensor) -> tuple:
+    def forward(self, x: torch.Tensor) -> tuple:
         """Forward pass through the network.
 
         Args:

@@ -25,17 +25,18 @@ class SACAgent(TemplateAgent):
 
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         network_size = self.wdb.get_hyperparameter("network_size")
+        init_method = self.wdb.get_hyperparameter("init_method")
         action_count, state_count = self.env.get_dimensions()
 
-        self.actor = ActorNet(action_count, state_count, network_size).to(self.device)
+        self.actor = ActorNet(action_count, state_count, network_size, init_method).to(self.device)
 
-        self.qnet1 = QNet(action_count, state_count, network_size).to(self.device)
-        self.qnet2 = QNet(action_count, state_count, network_size).to(self.device)
+        self.qnet1 = QNet(action_count, state_count, network_size, init_method).to(self.device)
+        self.qnet2 = QNet(action_count, state_count, network_size, init_method).to(self.device)
 
-        self.qnet1_target = QNet(action_count, state_count, network_size).to(
+        self.qnet1_target = QNet(action_count, state_count, network_size, init_method).to(
             self.device
         )
-        self.qnet2_target = QNet(action_count, state_count, network_size).to(
+        self.qnet2_target = QNet(action_count, state_count, network_size, init_method).to(
             self.device
         )
 
@@ -66,12 +67,8 @@ class SACAgent(TemplateAgent):
             [self.log_alpha], lr=self.wdb.get_hyperparameter("learning_rate_actor")
         )
 
-    def get_action(self, state, deterministic=False) -> tuple:
+    def get_action(self, state: torch.Tensor, deterministic: bool = False) -> tuple:
         """Selects an action based on the current state using the actor.
-
-        Args:
-            state: The current state of the environment.
-            deterministic: False when training, True when evaluating
 
         Returns:
             action: Action tensor with [-1, 1 bounds]

@@ -33,3 +33,4 @@ config:
   reward_scale: 1                           # Rewards need to be scaled for entropy temperature
   policy_update_frequency: 1                # How often will the policy be updated?
   normalize_rewards: 0                      # Whether to normalize rewards or not (1 = True, 0 = False)
+  init_method: "orthogonal"                 # How will be the neural networks initialized?

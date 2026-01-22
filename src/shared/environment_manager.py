@@ -41,12 +41,7 @@ class EnvironmentManager:
         self.normalize_rewards = True
 
     def build_video_recorder(self, video_folder: str = "outputs/", fps: int = 120):
-        """Wraps itself in a video recorder wrapper.
-
-        Args:
-            video_folder (str): Folder where videos will be saved.
-            fps (int): Frames per second for the recorded video.
-        """
+        """Wraps itself in a video recorder wrapper."""
         self.env.metadata["render_fps"] = fps
         self.env = wrappers.RecordVideo(
             self.env,
@@ -55,11 +50,7 @@ class EnvironmentManager:
         )
 
     def save_normalization_parameters(self, path):
-        """Saves the observation normalization mean and variance to a file.
-
-        Args:
-            path (str): The file path where the normalization parameters will be saved.
-        """
+        """Saves the observation normalization mean and variance to a file."""
         if self.observation_norm_wrapper is None:
             raise ValueError(
                 "Normalization wrapper not found. Ensure build_continuous() has been called."
@@ -68,11 +59,7 @@ class EnvironmentManager:
         np.savez(path, mean=rms.mean, var=rms.var, count=rms.count)
 
     def load_normalization_parameters(self, path):
-        """Loads the observation normalization mean and variance from a file.
-
-        Args:
-            path (str): The file path from which the normalization parameters will be loaded.
-        """
+        """Loads the observation normalization mean and variance from a file."""
         if self.observation_norm_wrapper is None:
             raise ValueError(
                 "Normalization wrapper not found. Ensure build_continuous() has been called."

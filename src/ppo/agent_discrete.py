@@ -21,8 +21,9 @@ class PPOAgentDiscrete(PPOAgentBase):
             wandb (WandbWrapper): Wandb wrapper for tracking and hyperparameter management.
         """
         network_size = wandb.get_hyperparameter("network_size")
+        init_method = wandb.get_hyperparameter("init_method")
         action_space, observation_space = environment.get_dimensions()
-        model = DiscreteActorCriticNet(action_space, observation_space, network_size)
+        model = DiscreteActorCriticNet(action_space, observation_space, network_size, init_method)
 
         super().__init__(environment, wandb, model)
 
@@ -47,10 +48,6 @@ class PPOAgentDiscrete(PPOAgentBase):
 
     def get_action(self, state: np.ndarray, deterministic: bool = False) -> tuple:
         """Selects an action based on the current state using the model.
-
-        Args:
-            state (np.ndarray): The current state of the environment.
-            deterministic (bool): Whether to select the action deterministically.
 
         Returns:
             tuple: A tuple containing the selected action, its log probability and value estimate.
