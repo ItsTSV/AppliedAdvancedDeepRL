@@ -85,14 +85,14 @@ class PPOAgentBase(TemplateAgent, ABC):
         while True:
             state = self.env.reset()
 
-            for step in count(1):
+            for _ in count(1):
                 total_steps += 1
 
                 action, log_prob, value = self.get_action(state)
-                new_state, reward, _, done, _ = self.env.step(action)
+                new_state, reward, terminated, done, _ = self.env.step(action)
 
                 rollout_size = self.memory.add(
-                    state, action, log_prob, reward, value, done
+                    state, action, log_prob, reward, value, terminated
                 )
                 state = new_state
 
