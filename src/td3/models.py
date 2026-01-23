@@ -38,7 +38,7 @@ class ActorNet(nn.Module):
             nn.ReLU(),
             init_layer(nn.Linear(network_size, network_size), method=init_method, gain=np.sqrt(2)),
             nn.ReLU(),
-            init_layer(nn.Linear(network_size, action_space_size), method=init_method, gain=0.01),
+            init_layer(nn.Linear(network_size, action_space_size), method="td3 uniform"),
             nn.Tanh()
         )
 

@@ -14,7 +14,10 @@ def init_layer(layer: nn.Module, method: str = "default", gain: float = np.sqrt(
             torch.nn.init.orthogonal_(layer.weight, gain)
             torch.nn.init.constant_(layer.bias, bias)
         elif method == "xavier":
-            torch.nn.init.xavier_uniform_(layer.weight)
+            torch.nn.init.xavier_uniform_(layer.weight, gain)
             torch.nn.init.zeros_(layer.bias)
+        elif method == "td3 uniform":
+            torch.nn.init.uniform_(layer.weight, -3e-3, 3e-3)
+            torch.nn.init.constant_(layer.bias, bias)
 
     return layer

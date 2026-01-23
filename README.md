@@ -14,11 +14,12 @@ more clear, for a price of very slight redundancy.
 - [x] Twin Delayed Deep Deterministic Policy Gradient (TD3)
 
 ### Environments to solve:
-- [ ] MuJoCo
+- [x] MuJoCo
   - [x] Swimmer-v5
   - [x] Hopper-v5  
   - [x] HalfCheetah-v5
   - [x] Walker2D-v5
+- [ ] Panda-gym?
 
 ### Trained models:
 I already trained some models. So far, they are stored in ```models``` folder. Will be changed soon, hopefully.
@@ -57,16 +58,16 @@ Run linter: ```pylint src```
 ### Benchmark Results
 The trained models were evaluated on 100 trials; the table shows mean and std values.
 
-| Environment |      PPO      | SAC | TD3 |
-| :--- |:-------------:| :---: | :---: |
-| **Swimmer-v5** |  345 +- 3.0   | TBD | TBD |
-| **Hopper-v5** | 2530 +- 262.9 | TBD | TBD |
+| Environment        |      PPO      | SAC | TD3 |
+|:-------------------|:-------------:| :---: | :---: |
+| **Swimmer-v5**     |  345 +- 3.0   | TBD | TBD |
+| **Hopper-v5**      | 2530 +- 262.9 | TBD | TBD |
 | **HalfCheetah-v5** | 3031 +- 594.4 | TBD | TBD |
-| **Ant-v5** |      TBD      | TBD | TBD |
+| **Walker2d-v5**    |      TBD      | TBD | TBD |
 
 ### Random gifs
 ... because looking at images is more interesting than reading text.
 
-| Hopper-v5  |           Swimmer-v5            |             HalfCheetah-v5               |
-| :---: |:-------------------------------:|:----------------------------------------:|
-| ![Hopper](outputs/hopper.gif) | ![Swimmer](outputs/swimmer.gif) | ![HalfCheetah](outputs/half_cheetah.gif) |
+| Hopper-v5  |           Swimmer-v5            |             HalfCheetah-v5               | Walker2D-v5 |
+| :---: |:-------------------------------:|:----------------------------------------:| :---: |
+| ![Hopper](outputs/hopper.gif) | ![Swimmer](outputs/swimmer.gif) | ![HalfCheetah](outputs/half_cheetah.gif) | ![Walker2D](outputs/walker2d.gif) |
