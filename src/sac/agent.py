@@ -289,7 +289,7 @@ class SACAgent(TemplateAgent):
         done = False
         while not done:
             state = torch.tensor(state).to(self.device).unsqueeze(0)
-            action, _ = self.get_action(state, deterministic=False)
+            action, _ = self.get_action(state, deterministic=True)
             action = action.detach().cpu().numpy()[0]
             state, reward, _, done, _ = self.env.step(action)
             self.env.render()

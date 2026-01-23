@@ -18,8 +18,7 @@ more clear, for a price of very slight redundancy.
   - [x] Swimmer-v5
   - [x] Hopper-v5  
   - [x] HalfCheetah-v5
-  - [ ] Walker2D-v5
-  - [ ] Ant-v5
+  - [x] Walker2D-v5
 
 ### Trained models:
 I already trained some models. So far, they are stored in ```models``` folder. Will be changed soon, hopefully.
