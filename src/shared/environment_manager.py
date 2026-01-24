@@ -81,6 +81,9 @@ class EnvironmentManager:
             len(self.env.observation_space.sample()),
         )
 
+    def get_action_bounds(self) -> tuple:
+        return self.env.action_space.low, self.env.action_space.high
+
     def get_state_shape(self) -> tuple:
         return self.env.observation_space.shape
 

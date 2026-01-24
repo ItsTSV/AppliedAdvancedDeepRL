@@ -31,7 +31,6 @@ config:
   noise_clip: 0.5                           # Min/Max noise value
   policy_interval: 2                        # How often will the actor and target networks be updated?
   network_size: 256                         # Number of neurons in each hidden layer
-  max_grad_norm: 1.0                        # Gradient clipping constant to prevent grad explosion
+  max_grad_norm: 10.0                       # Gradient clipping constant to prevent grad explosion
   reward_scale: 1.0                         # Used for reward scaling
   normalize_rewards: 0                      # Whether to normalize rewards or not (1 = True, 0 = False)
-  init_method: "xavier"                     # How will be the neural networks initialized?

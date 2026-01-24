@@ -25,23 +25,19 @@ class TD3Agent(TemplateAgent):
 
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         network_size = self.wdb.get_hyperparameter("network_size")
-        init_method = self.wdb.get_hyperparameter("init_method")
         action_count, state_count = self.env.get_dimensions()
+        action_low, action_high = self.env.get_action_bounds()
 
-        self.actor = ActorNet(action_count, state_count, network_size, init_method).to(self.device)
+        self.actor = ActorNet(action_count, state_count, action_low,
+                              action_high, network_size).to(self.device)
 
-        self.qnet1 = QNet(action_count, state_count, network_size, init_method).to(self.device)
-        self.qnet2 = QNet(action_count, state_count, network_size, init_method).to(self.device)
+        self.qnet1 = QNet(action_count, state_count, network_size).to(self.device)
+        self.qnet2 = QNet(action_count, state_count, network_size).to(self.device)
 
-        self.actor_target = ActorNet(action_count, state_count, network_size, init_method).to(
-            self.device
-        )
-        self.qnet1_target = QNet(action_count, state_count, network_size, init_method).to(
-            self.device
-        )
-        self.qnet2_target = QNet(action_count, state_count, network_size, init_method).to(
-            self.device
-        )
+        self.actor_target = ActorNet(action_count, state_count, action_low,
+                                     action_high, network_size).to(self.device)
+        self.qnet1_target = QNet(action_count, state_count, network_size).to(self.device)
+        self.qnet2_target = QNet(action_count, state_count, network_size).to(self.device)
 
         # Copy & lock weights
         self.actor_target.load_state_dict(self.actor.state_dict())
@@ -174,6 +170,7 @@ class TD3Agent(TemplateAgent):
         policy_interval = self.wdb.get_hyperparameter("policy_interval")
         best_mean = float("-inf")
         save_interval = self.wdb.get_hyperparameter("save_interval")
+        reward_scale = self.wdb.get_hyperparameter("reward_scale")
         reward_buffer = deque(maxlen=save_interval)
 
         while True:
@@ -189,7 +186,7 @@ class TD3Agent(TemplateAgent):
                     action = action.detach().cpu().numpy()[0]
 
                 next_state, reward, terminated, done, _ = self.env.step(action)
-                scaled_reward = reward / self.wdb.get_hyperparameter("reward_scale")
+                scaled_reward = reward * reward_scale
 
                 self.memory.add(state, action, scaled_reward, next_state, terminated)
                 state = next_state

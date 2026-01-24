@@ -1,21 +1,18 @@
 import torch
 import torch.nn as nn
-import numpy as np
-from src.shared.weight_initializer import init_layer
 
 
 class QNet(nn.Module):
     """Q-Network for predicting values; serves as a critic in TD3."""
 
-    def __init__(self, action_space_size: int, state_space_size: int, network_size: int, init_method: str):
+    def __init__(self, action_space_size: int, state_space_size: int, network_size: int):
         super().__init__()
         self.network = nn.Sequential(
-            init_layer(nn.Linear(state_space_size + action_space_size, network_size),
-                       method=init_method, gain=np.sqrt(2)),
+            nn.Linear(state_space_size + action_space_size, network_size),
             nn.ReLU(),
-            init_layer(nn.Linear(network_size, network_size), method=init_method, gain=np.sqrt(2)),
+            nn.Linear(network_size, network_size),
             nn.ReLU(),
-            init_layer(nn.Linear(network_size, 1), method=init_method, gain=1.0),
+            nn.Linear(network_size, 1),
         )
 
     def forward(self, state: torch.Tensor, action: torch.Tensor) -> torch.Tensor:
@@ -31,16 +28,19 @@ class QNet(nn.Module):
 class ActorNet(nn.Module):
     """Policy network for TD3."""
 
-    def __init__(self, action_space_size: int, state_space_size: int, network_size: int, init_method: str):
+    def __init__(self, action_space_size: int, state_space_size: int, action_low: float,
+                 action_high: float, network_size: int):
         super().__init__()
         self.network = nn.Sequential(
-            init_layer(nn.Linear(state_space_size, network_size), method=init_method, gain=np.sqrt(2)),
+            nn.Linear(state_space_size, network_size),
             nn.ReLU(),
-            init_layer(nn.Linear(network_size, network_size), method=init_method, gain=np.sqrt(2)),
+            nn.Linear(network_size, network_size),
             nn.ReLU(),
-            init_layer(nn.Linear(network_size, action_space_size), method="td3 uniform"),
+            nn.Linear(network_size, action_space_size),
             nn.Tanh()
         )
+        self.register_buffer("action_scale", torch.tensor((action_high - action_low) / 2, dtype=torch.float32))
+        self.register_buffer("action_bias", torch.tensor((action_high + action_low) / 2, dtype=torch.float32))
 
     def forward(self, x: torch.Tensor) -> tuple:
         """Forwards pass through the network.
@@ -51,4 +51,4 @@ class ActorNet(nn.Module):
         Returns:
             torch.Tensor: Actions to advance the environment
         """
-        return self.network(x)
+        return self.network(x) * self.action_scale + self.action_bias
