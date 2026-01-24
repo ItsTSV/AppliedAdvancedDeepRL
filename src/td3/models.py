@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import numpy as np
 
 
 class QNet(nn.Module):
@@ -39,8 +40,17 @@ class ActorNet(nn.Module):
             nn.Linear(network_size, action_space_size),
             nn.Tanh()
         )
-        self.register_buffer("action_scale", torch.tensor((action_high - action_low) / 2, dtype=torch.float32))
-        self.register_buffer("action_bias", torch.tensor((action_high + action_low) / 2, dtype=torch.float32))
+
+        if np.any(np.isinf(action_low)) or np.any(np.isinf(action_high)):
+            print("The bounds are infinite! Assuming the scaling to be handled by the environment.")
+            scale = 1.0
+            bias = 0.0
+        else:
+            scale = (action_high - action_low) / 2.0
+            bias = (action_high + action_low) / 2.0
+
+        self.register_buffer("action_scale", torch.tensor(scale, dtype=torch.float32))
+        self.register_buffer("action_bias", torch.tensor(bias, dtype=torch.float32))
 
     def forward(self, x: torch.Tensor) -> tuple:
         """Forwards pass through the network.
