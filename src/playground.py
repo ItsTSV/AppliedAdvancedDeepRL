@@ -1,4 +1,5 @@
 import os
+import numpy as np
 import pandas as pd
 from pathlib import Path
 from textual.app import App, ComposeResult
@@ -157,6 +158,7 @@ class RlPlayground(App):
         env = EnvironmentManager(
             name, "human" if self.render_mode == "Human Rendering" else "rgb_array"
         )
+
         env.build_continuous()
         if self.render_mode == "Video Rendering":
             env.build_video_recorder()
@@ -185,6 +187,8 @@ class RlPlayground(App):
         df = pd.DataFrame({"Trial": [], "Reward": [], "Steps": []})
         for i in range(self.num_trials):
             reward, steps = agent.play()
+            if isinstance(reward, (tuple, list, np.ndarray)):
+                reward = float(reward[0])
             df.loc[len(df)] = [i, reward, steps]
             self.call_later(
                 self.log_message,
