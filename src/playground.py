@@ -46,6 +46,7 @@ class RlPlayground(App):
         self.render_mode = None
         self.num_trials = 1
         self.generate_csv_log = False
+        self.delay_rendering = False
         self.generate_chart_report = False
 
         # Path stuff
@@ -79,6 +80,7 @@ class RlPlayground(App):
                 yield RadioButton("No Rendering")
                 yield RadioButton("Human Rendering")
                 yield RadioButton("Video Rendering")
+            yield Checkbox("Delay Rendering", id="delay_rendering_checkbox")
 
             # Trial runner
             yield Markdown("# How many trials?")
@@ -130,6 +132,8 @@ class RlPlayground(App):
             self.generate_csv_log = bool(event.value)
         elif event.checkbox.id == "chart_report_checkbox":
             self.generate_chart_report = bool(event.value)
+        elif event.checkbox.id == "delay_rendering_checkbox":
+            self.delay_rendering = bool(event.value)
 
     def action_toggle_dark(self) -> None:
         """An action to toggle dark mode"""
@@ -138,33 +142,57 @@ class RlPlayground(App):
         )
 
     def run_trials(self):
-        """Run the specified number of trials with the selected configuration"""
+        """Sets up the whole init-trial-report data process"""
         self.call_later(self.clear_log)
 
-        # Validate selections
+        if not self._validate_configuration():
+            return
+
+        self.call_later(self.log_summary)
+
+        try:
+            wdb = WandbWrapper(self.config_path, mode="disabled")
+            env = self._setup_environment(wdb)
+            agent = self._setup_agent(env, wdb)
+            results_df = self._execute_trial_loop(agent)
+            self._process_results(results_df)
+        except Exception as e:
+            self.call_later(self.log_message, f"[bold red]Critical Error:[/bold red] {e}")
+        finally:
+            env.close()
+            wdb.finish()
+            self.call_later(self.log_message, "[bold blue]Trials finished[/bold blue]")
+
+    def _validate_configuration(self) -> bool:
+        """Checks if all necessary paths and modes are selected."""
         if not all([self.config_path, self.model_path, self.render_mode]):
             self.call_later(
                 self.log_message,
                 "[bold red]Error:[/bold red] Please make all selections before running trials.",
             )
-            return
+            return False
+        return True
 
-        self.call_later(self.log_summary)
+    def _setup_environment(self, wdb):
+        """Initializes the gym environment based on config."""
+        env_name = wdb.get_hyperparameter("environment")
+        render_mode = "human" if self.render_mode == "Human Rendering" else "rgb_array"
 
-        wdb = WandbWrapper(self.config_path, mode="disabled")
+        env = EnvironmentManager(env_name, render_mode)
 
-        # Initialize environment with correct settings
-        name = wdb.get_hyperparameter("environment")
-        env = EnvironmentManager(
-            name, "human" if self.render_mode == "Human Rendering" else "rgb_array"
-        )
-
+        if "Panda" in env_name:
+            env.build_panda_gym()
         env.build_continuous()
+
         if self.render_mode == "Video Rendering":
             env.build_video_recorder()
 
-        # Initialize agent
+        return env
+
+    def _setup_agent(self, env, wdb):
+        """Initializes the agent and loads weights."""
         algorithm = wdb.get_hyperparameter("algorithm")
+
         if algorithm == "PPO Continuous":
             agent = PPOAgentContinuous(env, wdb)
         elif algorithm == "SAC":
@@ -180,49 +208,64 @@ class RlPlayground(App):
             except RuntimeError:
                 self.call_later(
                     self.log_message,
-                    "[bold red]Make sure the model is compactible with selected agent![/bold red]",
+                    "[bold red]Make sure the model is compatible with selected agent![/bold red]",
                 )
+                raise
 
-        # Trial loop & logging
-        df = pd.DataFrame({"Trial": [], "Reward": [], "Steps": []})
+        return agent
+
+    def _execute_trial_loop(self, agent) -> pd.DataFrame:
+        """Runs the episodes and collects data."""
+        data = []
+
         for i in range(self.num_trials):
-            reward, steps = agent.play()
+            reward, steps, info = agent.play(delay=self.delay_rendering)
+
             if isinstance(reward, (tuple, list, np.ndarray)):
                 reward = float(reward[0])
-            df.loc[len(df)] = [i, reward, steps]
-            self.call_later(
-                self.log_message,
-                f"[bold yellow]Trial {i + 1} Reward:[/bold yellow] {reward}",
-            )
 
-        average_reward = df["Reward"].mean()
-        std_reward = df["Reward"].std()
-        self.call_later(
-            self.log_message,
-            f"[bold magenta]Average Reward:[/bold magenta] {average_reward}",
-        )
-        self.call_later(
-            self.log_message,
-            f"[bold magenta]Reward Standard Deviation:[/bold magenta] {std_reward}",
-        )
+            success_rate = info.get("success_rate", -1)
+            data.append({
+                "Trial": i,
+                "Reward": reward,
+                "Steps": steps,
+                "Success Rate": success_rate
+            })
 
-        # Generate charts / save to csv
+            self._log_trial_status(i, reward, success_rate)
+
+        return pd.DataFrame(data)
+
+    def _process_results(self, df: pd.DataFrame):
+        """Calculates stats, saves CSV and generates charts."""
+        self.call_later(self.log_message, f"[bold magenta]Average Reward:[/bold magenta] {df['Reward'].mean()}")
+        self.call_later(self.log_message, f"[bold magenta]Reward Std Dev:[/bold magenta] {df['Reward'].std()}")
+
+        success_rate = df["Success Rate"].mean()
+        if success_rate != -1:
+            self.call_later(self.log_message,
+                            f"[bold magenta]Avg Success Rate:[/bold magenta] {df['Success Rate'].mean()}")
+            msg = "[bold green] Success! [/bold green]" if success_rate >= 0.9 else "[bold red] Failure! [/bold red]"
+            self.call_later(self.log_message, msg)
+
         output_dir = self.project_root / "outputs"
         output_dir.mkdir(parents=True, exist_ok=True)
-        tmp_name = self.model_path.rsplit(os.sep, maxsplit=1)[-1]
+        run_name = self.model_path.rsplit(os.sep, maxsplit=1)[-1]
 
         if self.generate_chart_report:
-            self.call_later(generate_distribution_plot, df, tmp_name, output_dir)
-            self.call_later(generate_scatter_plot, df, tmp_name, output_dir)
+            self.call_later(generate_distribution_plot, df, run_name, output_dir)
+            self.call_later(generate_scatter_plot, df, run_name, output_dir)
 
         if self.generate_csv_log:
-            csv_path = str(output_dir / f"{tmp_name}_run.csv")
+            csv_path = str(output_dir / f"{run_name}_run.csv")
             df.to_csv(csv_path)
 
-        self.call_later(self.log_message, "[bold blue]Trials finished[/bold blue]")
-
-        env.close()
-        wdb.finish()
+    def _log_trial_status(self, i, reward, success_rate):
+        """Helper to log single trial result to GUI."""
+        self.call_later(
+            self.log_message,
+            f"[bold yellow]Trial {i + 1} Reward:[/bold yellow] {reward}",
+        )
 
     def log_summary(self):
         """Thread-safe method for writing trial summary"""

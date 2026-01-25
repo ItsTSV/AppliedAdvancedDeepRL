@@ -2,6 +2,7 @@ import gymnasium as gym
 import panda_gym
 from gymnasium import wrappers
 import numpy as np
+from src.shared.success_rate_wrapper import SuccessRateWrapper
 
 
 class EnvironmentManager:
@@ -24,16 +25,22 @@ class EnvironmentManager:
     def build_continuous(self):
         """Wraps itself in wrappers that are used for environments with continuous action space.
 
-        Flatten Observation -- flattens dictionary observations into a single array if needed.
         Clip actions -- normalises the input action to [-1, 1] range.
         Normalize Observation -- normalises observations to have mean 0 and variance 1.
         """
-        if isinstance(self.env.observation_space, gym.spaces.Dict):
-            self.env = wrappers.FlattenObservation(self.env)
-
         self.env = wrappers.ClipAction(self.env)
         self.env = wrappers.NormalizeObservation(self.env)
         self.observation_norm_wrapper = self.env
+
+    def build_panda_gym(self):
+        """Wraps itself in wrappers that are used for PandaGym environments.
+
+        SuccessRateWrapper -- custom wrapper, calculates how often is the environment successfully completed
+        FlattenObservation -- flattens dictionary observations into a single array if needed.
+        """
+        self.env = SuccessRateWrapper(self.env)
+        if isinstance(self.env.observation_space, gym.spaces.Dict):
+            self.env = wrappers.FlattenObservation(self.env)
 
     def build_reward_normalization(self):
         """Wraps itself in wrappers that normalizes rewards and records episode statistics.
@@ -45,7 +52,7 @@ class EnvironmentManager:
         self.env = wrappers.NormalizeReward(self.env)
         self.normalize_rewards = True
 
-    def build_video_recorder(self, video_folder: str = "outputs/", fps: int = 120):
+    def build_video_recorder(self, video_folder: str = "outputs/", fps: int = 60):
         """Wraps itself in a video recorder wrapper."""
         self.env.metadata["render_fps"] = fps
         self.env = wrappers.RecordVideo(

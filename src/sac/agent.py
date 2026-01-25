@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+import time
 import itertools
 import torch.nn.functional as F
 from collections import deque
@@ -283,7 +284,7 @@ class SACAgent(TemplateAgent):
         self.save_artifact()
         self.wdb.finish()
 
-    def play(self):
+    def play(self, delay: bool = False):
         """See the agent perform in selected environment."""
         state = self.env.reset()
         done = False
@@ -291,8 +292,10 @@ class SACAgent(TemplateAgent):
             state = torch.tensor(state).to(self.device).unsqueeze(0)
             action, _ = self.get_action(state, deterministic=True)
             action = action.detach().cpu().numpy()[0]
-            state, reward, _, done, _ = self.env.step(action)
+            state, reward, _, done, info = self.env.step(action)
             self.env.render()
+            if delay:
+                time.sleep(0.5)
 
         steps, reward = self.env.get_episode_info()
-        return reward, steps
+        return reward, steps, info

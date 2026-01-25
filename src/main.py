@@ -13,6 +13,8 @@ if __name__ == "__main__":
 
     name = wdb.get_hyperparameter("environment")
     env = EnvironmentManager(name, "rgb_array")
+    if "Panda" in name:
+        env.build_panda_gym()
     env.build_continuous()
 
     algorithm = wdb.get_hyperparameter("algorithm")

@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+import time
 from abc import ABC, abstractmethod
 from collections import deque
 from src.shared.environment_manager import EnvironmentManager
@@ -76,9 +77,10 @@ class PPOAgentBase(TemplateAgent, ABC):
         episode = 0
         total_steps = 0
         max_steps = self.wdb.get_hyperparameter("total_steps")
-        best_mean = float("-inf")
         save_interval = self.wdb.get_hyperparameter("save_interval")
-        reward_buffer = deque(maxlen=save_interval)
+        hp_rollout_length = self.wdb.get_hyperparameter("rollout_length")
+        best_mean = float("-inf")
+        reward_buffer = deque([float("-inf")] * save_interval, maxlen=save_interval)
         policy_loss_buffer = deque(maxlen=5)
         value_loss_buffer = deque(maxlen=5)
 
@@ -89,14 +91,14 @@ class PPOAgentBase(TemplateAgent, ABC):
                 total_steps += 1
 
                 action, log_prob, value = self.get_action(state)
-                new_state, reward, terminated, done, _ = self.env.step(action)
+                new_state, reward, terminated, done, info = self.env.step(action)
 
                 rollout_size = self.memory.add(
                     state, action, log_prob, reward, value, terminated
                 )
                 state = new_state
 
-                if rollout_size == self.wdb.get_hyperparameter("rollout_length"):
+                if rollout_size == hp_rollout_length:
                     value_loss, policy_loss = self.optimize_model(state)
                     value_loss_buffer.append(value_loss)
                     policy_loss_buffer.append(policy_loss)
@@ -123,6 +125,9 @@ class PPOAgentBase(TemplateAgent, ABC):
                             f"Episode {episode} -- saving model with new best mean reward: {mean}"
                         )
 
+                    if "success_rate" in info:
+                        self.wdb.log({"Success Rate": info["success_rate"]})
+
                     if episode % 10 == 0:
                         print(
                             f"Episode {episode} finished in {episode_steps} steps with reward {episode_reward}. "
@@ -147,14 +152,16 @@ class PPOAgentBase(TemplateAgent, ABC):
         self.save_artifact()
         self.wdb.finish()
 
-    def play(self) -> tuple:
+    def play(self, delay: bool = False) -> tuple:
         """See the agent perform in selected environment."""
         state = self.env.reset()
         done = False
         while not done:
             action, _, _ = self.get_action(state, deterministic=True)
-            state, reward, _, done, _ = self.env.step(action)
+            state, reward, _, done, info = self.env.step(action)
             self.env.render()
+            if delay:
+                time.sleep(0.5)
 
         steps, reward = self.env.get_episode_info()
-        return reward, steps
+        return reward, steps, info
