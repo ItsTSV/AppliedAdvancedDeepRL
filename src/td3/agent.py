@@ -27,16 +27,13 @@ class TD3Agent(TemplateAgent):
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         network_size = self.wdb.get_hyperparameter("network_size")
         action_count, state_count = self.env.get_dimensions()
-        action_low, action_high = self.env.get_action_bounds()
 
-        self.actor = ActorNet(action_count, state_count, action_low,
-                              action_high, network_size).to(self.device)
+        self.actor = ActorNet(action_count, state_count, network_size).to(self.device)
 
         self.qnet1 = QNet(action_count, state_count, network_size).to(self.device)
         self.qnet2 = QNet(action_count, state_count, network_size).to(self.device)
 
-        self.actor_target = ActorNet(action_count, state_count, action_low,
-                                     action_high, network_size).to(self.device)
+        self.actor_target = ActorNet(action_count, state_count, network_size).to(self.device)
         self.qnet1_target = QNet(action_count, state_count, network_size).to(self.device)
         self.qnet2_target = QNet(action_count, state_count, network_size).to(self.device)
 
@@ -44,12 +41,6 @@ class TD3Agent(TemplateAgent):
         self.actor_target.load_state_dict(self.actor.state_dict())
         self.qnet1_target.load_state_dict(self.qnet1.state_dict())
         self.qnet2_target.load_state_dict(self.qnet2.state_dict())
-        for param in self.qnet1_target.parameters():
-            param.requires_grad = False
-        for param in self.qnet2_target.parameters():
-            param.requires_grad = False
-        for param in self.actor_target.parameters():
-            param.requires_grad = False
 
         memory_size = self.wdb.get_hyperparameter("memory_size")
         self.memory = ReplayBuffer(memory_size, action_count, state_count)
@@ -58,9 +49,10 @@ class TD3Agent(TemplateAgent):
             self.actor.parameters(),
             lr=self.wdb.get_hyperparameter("learning_rate_actor"),
         )
-        self.optimizer_q = torch.optim.Adam(
+        self.optimizer_q = torch.optim.AdamW(
             itertools.chain(self.qnet1.parameters(), self.qnet2.parameters()),
             lr=self.wdb.get_hyperparameter("learning_rate_q"),
+            weight_decay=1e-5
         )
 
     def get_action(self, state: torch.Tensor, deterministic: bool = False):
@@ -157,10 +149,11 @@ class TD3Agent(TemplateAgent):
     def polyak_update(self, source: torch.nn.Module, target: torch.nn.Module):
         """Updates target networks by polyak averaging."""
         tau = self.wdb.get_hyperparameter("tau")
-        for src_param, target_param in zip(source.parameters(), target.parameters()):
-            target_param.data.copy_(
-                tau * src_param.data + (1 - tau) * target_param.data
-            )
+        with torch.no_grad():
+            for src_param, target_param in zip(source.parameters(), target.parameters()):
+                target_param.data.copy_(
+                    tau * src_param.data + (1 - tau) * target_param.data
+                )
 
     def train(self):
         """Main training loop for the TD3 agent."""
@@ -186,7 +179,7 @@ class TD3Agent(TemplateAgent):
                     action = self.get_action(state_tensor)
                     action = action.detach().cpu().numpy()[0]
 
-                next_state, reward, terminated, done, info = self.env.step(action)
+                next_state, reward, terminated, truncated, info = self.env.step(action)
                 scaled_reward = reward * reward_scale
 
                 self.memory.add(state, action, scaled_reward, next_state, terminated)
@@ -214,7 +207,7 @@ class TD3Agent(TemplateAgent):
                             }
                         )
 
-                if done:
+                if terminated or truncated:
                     episode_steps, episode_reward = self.env.get_episode_info()
                     episode += 1
 
@@ -258,12 +251,12 @@ class TD3Agent(TemplateAgent):
     def play(self, delay: bool = False):
         """See the agent perform in selected environment."""
         state = self.env.reset()
-        done = False
-        while not done:
+        terminated = truncated = False
+        while not (terminated or truncated):
             state = torch.tensor(state).to(self.device).unsqueeze(0)
             action = self.get_action(state, deterministic=True)
             action = action.detach().cpu().numpy()[0]
-            state, reward, _, done, info = self.env.step(action)
+            state, reward, terminated, truncated, info = self.env.step(action)
             self.env.render()
             if delay:
                 time.sleep(0.5)

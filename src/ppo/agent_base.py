@@ -91,7 +91,7 @@ class PPOAgentBase(TemplateAgent, ABC):
                 total_steps += 1
 
                 action, log_prob, value = self.get_action(state)
-                new_state, reward, terminated, done, info = self.env.step(action)
+                new_state, reward, terminated, truncated, info = self.env.step(action)
 
                 rollout_size = self.memory.add(
                     state, action, log_prob, reward, value, terminated
@@ -111,7 +111,7 @@ class PPOAgentBase(TemplateAgent, ABC):
                         }
                     )
 
-                if done:
+                if terminated or truncated:
                     episode_steps, episode_reward = self.env.get_episode_info()
                     episode += 1
 
@@ -155,10 +155,10 @@ class PPOAgentBase(TemplateAgent, ABC):
     def play(self, delay: bool = False) -> tuple:
         """See the agent perform in selected environment."""
         state = self.env.reset()
-        done = False
-        while not done:
+        terminated = truncated = False
+        while not (terminated or truncated):
             action, _, _ = self.get_action(state, deterministic=True)
-            state, reward, _, done, info = self.env.step(action)
+            state, reward, terminated, truncated, info = self.env.step(action)
             self.env.render()
             if delay:
                 time.sleep(0.5)

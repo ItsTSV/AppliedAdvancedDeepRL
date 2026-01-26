@@ -107,10 +107,9 @@ class EnvironmentManager:
 
         Returns:
             New observation, reward acquired by performing action,
-            termination info, additional env data
+            termination info, truncation info, additional env data
         """
         state, reward, terminated, truncated, info = self.env.step(action)
-        finished = terminated or truncated
 
         self.episode_steps += 1
         if self.normalize_rewards:
@@ -119,7 +118,7 @@ class EnvironmentManager:
         else:
             self.episode_reward += reward
 
-        return state, reward, terminated, finished, info
+        return state, reward, terminated, truncated, info
 
     def reset(self) -> np.ndarray:
         """Resets the environment, returns a new state"""

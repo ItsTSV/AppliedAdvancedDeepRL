@@ -29,8 +29,7 @@ class QNet(nn.Module):
 class ActorNet(nn.Module):
     """Policy network for TD3."""
 
-    def __init__(self, action_space_size: int, state_space_size: int, action_low: float,
-                 action_high: float, network_size: int):
+    def __init__(self, action_space_size: int, state_space_size: int, network_size: int):
         super().__init__()
         self.network = nn.Sequential(
             nn.Linear(state_space_size, network_size),
@@ -41,18 +40,7 @@ class ActorNet(nn.Module):
             nn.Tanh()
         )
 
-        if np.any(np.isinf(action_low)) or np.any(np.isinf(action_high)):
-            print("The bounds are infinite! Assuming the scaling to be handled by the environment.")
-            scale = 1.0
-            bias = 0.0
-        else:
-            scale = (action_high - action_low) / 2.0
-            bias = (action_high + action_low) / 2.0
-
-        self.register_buffer("action_scale", torch.tensor(scale, dtype=torch.float32))
-        self.register_buffer("action_bias", torch.tensor(bias, dtype=torch.float32))
-
-    def forward(self, x: torch.Tensor) -> tuple:
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forwards pass through the network.
 
          Args:
@@ -61,4 +49,4 @@ class ActorNet(nn.Module):
         Returns:
             torch.Tensor: Actions to advance the environment
         """
-        return self.network(x) * self.action_scale + self.action_bias
+        return self.network(x)

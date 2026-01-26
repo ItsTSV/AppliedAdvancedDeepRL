@@ -50,19 +50,14 @@ class SACAgent(TemplateAgent):
         memory_size = self.wdb.get_hyperparameter("memory_size")
         self.memory = ReplayBuffer(memory_size, action_count, state_count)
 
-        # Lock target networks
-        for param in self.qnet1_target.parameters():
-            param.requires_grad = False
-        for param in self.qnet2_target.parameters():
-            param.requires_grad = False
-
         self.optimizer_actor = torch.optim.Adam(
             self.actor.parameters(),
             lr=self.wdb.get_hyperparameter("learning_rate_actor"),
         )
-        self.optimizer_q = torch.optim.Adam(
+        self.optimizer_q = torch.optim.AdamW(
             itertools.chain(self.qnet1.parameters(), self.qnet2.parameters()),
             lr=self.wdb.get_hyperparameter("learning_rate_q"),
+            weight_decay=1e-5
         )
         self.optimizer_alpha = torch.optim.Adam(
             [self.log_alpha], lr=self.wdb.get_hyperparameter("learning_rate_actor")
@@ -188,10 +183,11 @@ class SACAgent(TemplateAgent):
     def polyak_update(self, source: torch.nn.Module, target: torch.nn.Module):
         """Updates target networks by polyak averaging."""
         tau = self.wdb.get_hyperparameter("tau")
-        for src_param, target_param in zip(source.parameters(), target.parameters()):
-            target_param.data.copy_(
-                tau * src_param.data + (1 - tau) * target_param.data
-            )
+        with torch.no_grad():
+            for src_param, target_param in zip(source.parameters(), target.parameters()):
+                target_param.data.copy_(
+                    tau * src_param.data + (1 - tau) * target_param.data
+                )
 
     def train(self):
         """Main training loop for the SAC agent."""
@@ -217,7 +213,7 @@ class SACAgent(TemplateAgent):
                     action, log_probs = self.get_action(state_tensor)
                     action = action.detach().cpu().numpy()[0]
 
-                next_state, reward, terminated, done, info = self.env.step(action)
+                next_state, reward, terminated, truncated, info = self.env.step(action)
                 scaled_reward = reward * self.wdb.get_hyperparameter("reward_scale")
 
                 self.memory.add(state, action, scaled_reward, next_state, terminated)
@@ -246,7 +242,7 @@ class SACAgent(TemplateAgent):
                             }
                         )
 
-                if done:
+                if terminated or truncated:
                     episode_steps, episode_reward = self.env.get_episode_info()
                     episode += 1
 
@@ -290,12 +286,12 @@ class SACAgent(TemplateAgent):
     def play(self, delay: bool = False):
         """See the agent perform in selected environment."""
         state = self.env.reset()
-        done = False
-        while not done:
+        terminated = truncated = False
+        while not (terminated or truncated):
             state = torch.tensor(state).to(self.device).unsqueeze(0)
             action, _ = self.get_action(state, deterministic=True)
             action = action.detach().cpu().numpy()[0]
-            state, reward, _, done, info = self.env.step(action)
+            state, reward, terminated, truncated, info = self.env.step(action)
             self.env.render()
             if delay:
                 time.sleep(0.5)
