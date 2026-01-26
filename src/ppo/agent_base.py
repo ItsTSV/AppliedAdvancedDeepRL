@@ -80,7 +80,7 @@ class PPOAgentBase(TemplateAgent, ABC):
         save_interval = self.wdb.get_hyperparameter("save_interval")
         hp_rollout_length = self.wdb.get_hyperparameter("rollout_length")
         best_mean = float("-inf")
-        reward_buffer = deque([float("-inf")] * save_interval, maxlen=save_interval)
+        reward_buffer = deque(maxlen=save_interval)
         policy_loss_buffer = deque(maxlen=5)
         value_loss_buffer = deque(maxlen=5)
 
@@ -118,14 +118,14 @@ class PPOAgentBase(TemplateAgent, ABC):
                     reward_buffer.append(episode_reward)
                     mean = np.sum(reward_buffer) / save_interval
 
-                    if mean > best_mean:
+                    if mean > best_mean and episode > save_interval:
                         best_mean = mean
                         self.save_model(self.actor)
                         print(
                             f"Episode {episode} -- saving model with new best mean reward: {mean}"
                         )
 
-                    if "success_rate" in info:
+                    if "success_rate" in info and episode > save_interval:
                         self.wdb.log({"Success Rate": info["success_rate"]})
 
                     if episode % 10 == 0:

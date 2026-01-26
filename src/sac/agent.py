@@ -217,7 +217,7 @@ class SACAgent(TemplateAgent):
                     action, log_probs = self.get_action(state_tensor)
                     action = action.detach().cpu().numpy()[0]
 
-                next_state, reward, terminated, done, _ = self.env.step(action)
+                next_state, reward, terminated, done, info = self.env.step(action)
                 scaled_reward = reward * self.wdb.get_hyperparameter("reward_scale")
 
                 self.memory.add(state, action, scaled_reward, next_state, terminated)
@@ -253,12 +253,15 @@ class SACAgent(TemplateAgent):
                     reward_buffer.append(episode_reward)
                     mean = np.mean(reward_buffer)
 
-                    if mean > best_mean:
+                    if mean > best_mean and episode > save_interval:
                         best_mean = mean
                         self.save_model(self.actor)
                         print(
                             f"Episode {episode} -- saving model with new best mean reward: {mean}"
                         )
+
+                    if "success_rate" in info and episode > save_interval:
+                        self.wdb.log({"Success Rate": info["success_rate"]})
 
                     if episode % 10 == 0:
                         print(
