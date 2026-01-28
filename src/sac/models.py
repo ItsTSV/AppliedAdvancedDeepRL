@@ -7,14 +7,14 @@ from src.shared.weight_initializer import init_layer
 class QNet(nn.Module):
     """Q-Network for predicting values; serves as a critic in SAC."""
 
-    def __init__(self, action_space_size: int, state_space_size: int, network_size: int, init_method: str):
+    def __init__(self, action_space_size: int, state_space_size: int, network_size: int):
         super().__init__()
         self.network = nn.Sequential(
-            init_layer(nn.Linear(state_space_size + action_space_size, network_size), method=init_method, gain=np.sqrt(2)),
+            nn.Linear(state_space_size + action_space_size, network_size),
             nn.ReLU(),
-            init_layer(nn.Linear(network_size, network_size), method=init_method, gain=np.sqrt(2)),
+            nn.Linear(network_size, network_size),
             nn.ReLU(),
-            init_layer(nn.Linear(network_size, 1), method=init_method, gain=1.0),
+            nn.Linear(network_size, 1),
         )
 
     def forward(self, state: torch.Tensor, action: torch.Tensor) -> torch.Tensor:
@@ -30,16 +30,16 @@ class QNet(nn.Module):
 class ActorNet(nn.Module):
     """Policy network for SAC."""
 
-    def __init__(self, action_space_size: int, state_space_size: int, network_size: int, init_method: str):
+    def __init__(self, action_space_size: int, state_space_size: int, network_size: int):
         super().__init__()
         self.network = nn.Sequential(
-            init_layer(nn.Linear(state_space_size, network_size), method=init_method, gain=np.sqrt(2)),
+            nn.Linear(state_space_size, network_size),
             nn.ReLU(),
-            init_layer(nn.Linear(network_size, network_size), method=init_method, gain=np.sqrt(2)),
+            nn.Linear(network_size, network_size),
             nn.ReLU(),
         )
-        self.mean_head = init_layer(nn.Linear(network_size, action_space_size), method=init_method, gain=0.01)
-        self.log_std_head = init_layer(nn.Linear(network_size, action_space_size), method=init_method, gain=1.0)
+        self.mean_head = nn.Linear(network_size, action_space_size)
+        self.log_std_head = nn.Linear(network_size, action_space_size)
 
     def forward(self, x: torch.Tensor) -> tuple:
         """Forwards pass through the network.

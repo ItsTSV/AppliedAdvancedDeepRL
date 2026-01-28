@@ -20,8 +20,8 @@ config:
   total_steps: 1_000_000                    # For how many steps will the agent train?
   # Algorithm hyperparameters
   memory_size: 1_000_000                    # How many steps can fit into the memory?
-  learning_rate_q: 0.002                    # Learning rate for Q-Network
-  learning_rate_actor: 0.002                # Learning rate for Actor network
+  learning_rate_q: 0.0003                    # Learning rate for Q-Network
+  learning_rate_actor: 0.0003                # Learning rate for Actor network
   tau: 0.005                                # Interpolation factor in target network updates
   warmup_steps: 5_000                       # How many steps before agents starts optimising?
   log_std_min: -5                           # Std normalisation lower bound
@@ -33,4 +33,3 @@ config:
   reward_scale: 1.0                         # Rewards need to be scaled for entropy temperature
   policy_update_frequency: 2                # How often will the policy be updated?
   normalize_rewards: 0                      # Whether to normalize rewards or not (1 = True, 0 = False)
-  init_method: "xavier"                     # How will be the neural networks initialized?
