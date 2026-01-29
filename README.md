@@ -1,7 +1,7 @@
 ## Reinforcement learning for robotics and complex simulated environments
-This repository contains implementation of my Diploma thesis focused on Deep Reinforcement Learning. So far, it is still
-heavily work in progress, but there are some parts already done. The environments I want to solve are mainly from robotics
-domain; though there might be some other simulated environments as well, if there is enough time and computational resources ;)
+This repository contains implementation of my Diploma thesis focused on Deep Reinforcement Learning.
+The environments I want to solve are mainly from robotics domain; though there might be some other simulated 
+environments as well, if there is enough time and computational resources ;)
 
 ### Implemented algorithms:
 All the implementations are self-contained, meaning that the logic -- optimization methods, training loops, 
@@ -22,11 +22,10 @@ more clear, for a price of very slight redundancy.
 - [ ] Panda-gym?
 
 ### Trained models:
-I already trained some models. So far, they are stored in ```models``` folder. Will be changed soon, hopefully.
+Trained models, which were used in thesis for benchmarks, are stored in ```models/``` folder.
 
 ### Training logs and videos:
-Training logs and videos are be stored on Weights & Biases, later on Streamlit presentation page. For now, they remain
-private.
+Training logs, charts etc. are stored using Weights & Biases. Can be either offline or online (with user account)
 
 ### Training and testing agents
 Both scripts must be run from Root Directory -- if they are not, the paths and imports might be broken.
@@ -56,17 +55,17 @@ Format source code: ```black src```
 Run linter: ```pylint src```
 
 ### Benchmark Results
-The trained models were evaluated on 100 trials; the table shows mean and std values.
+The trained models were evaluated on 100 trials; the table shows mean and std reward values.
 
-| Environment        |      PPO      | SAC | TD3 |
-|:-------------------|:-------------:| :---: | :---: |
-| **Swimmer-v5**     |  345 +- 3.0   | TBD | TBD |
-| **Hopper-v5**      | 2530 +- 262.9 | TBD | TBD |
-| **HalfCheetah-v5** | 3031 +- 594.4 | TBD | TBD |
-| **Walker2d-v5**    |      TBD      | TBD | TBD |
+| Environment        |      PPO       |     SAC      |      TD3       |
+|:-------------------|:--------------:|:------------:|:--------------:|
+| **Swimmer-v5**     |   345 +- 3.0   |      --      |       --       |
+| **Hopper-v5**      |  2625 +- 65.1  |     TBD      |      TBD       |
+| **HalfCheetah-v5** | 3105 +- 494.7  | 7250 +- 89.0 | 9802 +- 708.4  |
+| **Walker2d-v5**    | 3930 +- 1585.3 |     TBD      | 5030 +- 1711.6 |
 
-### Random gifs
-... because looking at images is more interesting than reading text.
+### Trained agents
+Because moving images are a bit more interesting than static text ;)
 
 | Hopper-v5  |           Swimmer-v5            |             HalfCheetah-v5               | Walker2D-v5 |
 | :---: |:-------------------------------:|:----------------------------------------:| :---: |

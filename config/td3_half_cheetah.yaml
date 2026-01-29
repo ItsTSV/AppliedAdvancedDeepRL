@@ -30,7 +30,7 @@ config:
   policy_noise: 0.2                         # Noise that is added to actor during network optimization
   noise_clip: 0.5                           # Min/Max noise value
   policy_interval: 2                        # How often will the actor and target networks be updated?
-  network_size: 256                         # Number of neurons in each hidden layer
+  network_size: 512                         # Number of neurons in each hidden layer
   max_grad_norm: 10.0                       # Gradient clipping constant to prevent grad explosion
   reward_scale: 1.0                         # Used for reward scaling
   normalize_rewards: 0                      # Whether to normalize rewards or not (1 = True, 0 = False)
