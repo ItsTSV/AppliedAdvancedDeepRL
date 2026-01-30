@@ -57,12 +57,12 @@ Run linter: ```pylint src```
 ### Benchmark Results
 The trained models were evaluated on 100 trials; the table shows mean and std reward values.
 
-| Environment        |      PPO       |     SAC      |      TD3       |
-|:-------------------|:--------------:|:------------:|:--------------:|
-| **Swimmer-v5**     |   345 +- 3.0   |      --      |       --       |
-| **Hopper-v5**      |  2625 +- 65.1  |     TBD      |      TBD       |
-| **HalfCheetah-v5** | 3105 +- 494.7  | 7250 +- 89.0 | 9802 +- 708.4  |
-| **Walker2d-v5**    | 3930 +- 1585.3 |     TBD      | 5030 +- 1711.6 |
+| Environment        |      PPO       |      SAC      |      TD3       |
+|:-------------------|:--------------:|:-------------:|:--------------:|
+| **Swimmer-v5**     |   345 +- 3.0   |      --       |       --       |
+| **Hopper-v5**      |  2625 +- 65.1  |  1669 +- 366  |  2201 +- 691   |
+| **HalfCheetah-v5** | 3105 +- 494.7  | 7250 +- 89.0  | 9802 +- 708.4  |
+| **Walker2d-v5**    | 3930 +- 1585.3 | 3660 +- 581.1 | 5030 +- 1711.6 |
 
 ### Trained agents
 Because moving images are a bit more interesting than static text ;)
