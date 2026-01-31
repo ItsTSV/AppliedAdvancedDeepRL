@@ -25,9 +25,12 @@ class EnvironmentManager:
     def build_continuous(self):
         """Wraps itself in wrappers that are used for environments with continuous action space.
 
+        Flatten Observation -- flattens dict observations into a single array.
         Clip actions -- normalises the input action to [-1, 1] range.
         Normalize Observation -- normalises observations to have mean 0 and variance 1.
         """
+        if isinstance(self.env.observation_space.sample(), dict):
+            self.env = wrappers.FlattenObservation(self.env)
         self.env = wrappers.ClipAction(self.env)
         self.env = wrappers.NormalizeObservation(self.env)
         self.observation_norm_wrapper = self.env

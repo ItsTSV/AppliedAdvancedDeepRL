@@ -13,4 +13,5 @@ pandas==2.3.3
 seaborn==0.13.2
 textual==7.1.0
 stable-baselines3==2.7.1
-panda-gym
+dm-control
+shimmy
