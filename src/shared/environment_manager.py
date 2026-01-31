@@ -1,8 +1,8 @@
 import gymnasium as gym
-import panda_gym
+import shimmy
+import dm_control
 from gymnasium import wrappers
 import numpy as np
-from src.shared.success_rate_wrapper import SuccessRateWrapper
 
 
 class EnvironmentManager:
@@ -31,16 +31,6 @@ class EnvironmentManager:
         self.env = wrappers.ClipAction(self.env)
         self.env = wrappers.NormalizeObservation(self.env)
         self.observation_norm_wrapper = self.env
-
-    def build_panda_gym(self):
-        """Wraps itself in wrappers that are used for PandaGym environments.
-
-        SuccessRateWrapper -- custom wrapper, calculates how often is the environment successfully completed
-        FlattenObservation -- flattens dictionary observations into a single array if needed.
-        """
-        self.env = SuccessRateWrapper(self.env)
-        if isinstance(self.env.observation_space, gym.spaces.Dict):
-            self.env = wrappers.FlattenObservation(self.env)
 
     def build_reward_normalization(self):
         """Wraps itself in wrappers that normalizes rewards and records episode statistics.

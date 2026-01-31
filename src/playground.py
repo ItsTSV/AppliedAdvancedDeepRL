@@ -179,9 +179,6 @@ class RlPlayground(App):
         render_mode = "human" if self.render_mode == "Human Rendering" else "rgb_array"
 
         env = EnvironmentManager(env_name, render_mode)
-
-        if "Panda" in env_name:
-            env.build_panda_gym()
         env.build_continuous()
 
         if self.render_mode == "Video Rendering":
